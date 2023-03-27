@@ -1,1 +1,1 @@
-# spinal-organ-ubigreen_occupancy
+# spinal-organ-ubigreen-occupancy-rules
