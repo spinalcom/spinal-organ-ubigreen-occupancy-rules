@@ -1,0 +1,39 @@
+{
+  "name": "spinal-organ-ubigreen-occupancy-rules",
+  "version": "1.0.0",
+  "description": "organ that calculates and analyse ubigreen occupancy rules",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run build && node dist/index.js",
+    "build": "rm -rf dist/ && tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cherifi-93/spinal-organ-ubigreen-occupancy-rules.git"
+  },
+  "keywords": [
+    "ubigreen"
+  ],
+  "author": "Salah-Eddine CHERIFI",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "moment": "^2.29.3",
+    "node-cron": "^3.0.1",
+    "spinal-core-connectorjs": "git+https://github.com/spinalcom/spinal-core-connectorjs.git",
+    "spinal-core-connectorjs_type": "git+https://github.com/spinalcom/spinal-core-connectorjs_type.git",
+    "spinal-env-viewer-graph-service": "git+https://github.com/spinalcom/Spinal-Graph-Service.git",
+    "spinal-env-viewer-plugin-documentation": "git+https://github.com/spinalcom/spinal-env-viewer-plugin-documentation.git",
+    "spinal-env-viewer-plugin-documentation-service": "git+https://github.com/spinalcom/spinal-env-viewer-plugin-documentation-service.git",
+    "spinal-lib-organ-monitoring": "git+https://github.com/spinalcom/spinal-lib-organ-monitoring.git",
+    "spinal-model-bmsnetwork": "git+https://github.com/spinalcom/spinal-model-bmsnetwork.git",
+    "spinal-model-graph": "git+https://github.com/spinalcom/spinal-model-graph.git",
+    "spinal-model-timeseries": "git+https://github.com/spinalcom/spinal-model-timeseries.git",
+    "typescript": "^4.4.4"
+  },
+  "bugs": {
+    "url": "https://github.com/cherifi-93/spinal-organ-ubigreen-occupancy-rules/issues"
+  },
+  "homepage": "https://github.com/cherifi-93/spinal-organ-ubigreen-occupancy-rules#readme"
+}
