@@ -181,7 +181,7 @@ class UtilsWorkingPositions {
         if (endpointValue == "0" && controlPointValue == "2") {
             await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
-            console.log("<< " + workPositionName + ">> updated ==> value = " + endpointValue);
+            console.log("<< " + workPositionName + " >> updated ==> value = " + endpointValue);
         }
         else if (endpointValue == "1" && controlPointValue == "2") {
             let date = new Date().getTime();

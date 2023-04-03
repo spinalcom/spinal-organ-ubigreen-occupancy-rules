@@ -209,7 +209,7 @@ export const networkService = new NetworkService()
         if(endpointValue=="0" && controlPointValue =="2"){
             await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
-            console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+            console.log("<< "+ workPositionName +" >> updated ==> value = " + endpointValue);
         }
         else if(endpointValue=="1" && controlPointValue =="2"){
             let date = new Date().getTime();

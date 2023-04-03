@@ -45,14 +45,16 @@ FileSystem.onConnectionError = (error_code: number) => {
 
 
 class SpinalMain {
+
+
     connect: spinal.FileSystem;
     constructor() { 
         const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
         this.connect = spinalCore.connect(url)
     }
     
+
     /**
-     * 
      * Initialize connection with the hub and load graph
      * @return {*}
      * @memberof SpinalMain
@@ -73,7 +75,6 @@ class SpinalMain {
 
 
   
-
     /**
      * The main function of the class
      * @returns Promise
@@ -81,9 +82,10 @@ class SpinalMain {
     public async MainJob(): Promise<void> {
         await this.analysingWorkingPosition();
         await this.analysingAttendance();
-
     }
    
+
+
     /**
      * Calculates the attendance ratio
      * @returns Promise
@@ -98,10 +100,10 @@ class SpinalMain {
         await utils_attendance.bindEndpointToControlpoint(cp,ep);
 
         console.log("** DONE ANALYSING ATTENDANCE **");
-
     }
 
 
+    
     /**
      * Analyse the occupancy of all working positions
      * @returns Promise
@@ -123,19 +125,7 @@ class SpinalMain {
         });
         await Promise.all(promises);
 
-        // for (let pos of workingPositions){
-        //     // if(pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]"){
-        //         let cp = await utils_workingPositions.getControlPoint(pos.id.get());
-        //         let ep = await utils_workingPositions.getOccupancyBmsEndpoint(pos);
-
-        //         await utils_workingPositions.bindEndpointToControlpoint(cp,ep,pos.name.get());
-        //         await utils_workingPositions.bindControlpointToRelease(cp,ep,pos.name.get());
-
-        //     // }
-        // }
-
         console.log("** DONE ANALYSING WORKING POSITIONS **");
-
     }
 
 
@@ -156,16 +146,7 @@ class SpinalMain {
         });
         await Promise.all(promises);
 
-        // for (let pos of workingPositions){
-        //     // if(pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]"){
-        //         let cp = await utils_workingPositions.getControlPoint(pos.id.get());
-        //         await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other)
-
-        //     // }
-        // }
-
         console.log("** DONE RESETING WORKING POSITIONS **");
-
     }
 
 

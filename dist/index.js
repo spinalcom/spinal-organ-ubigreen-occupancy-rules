@@ -47,7 +47,6 @@ class SpinalMain {
         this.connect = spinal_core_connectorjs_type_1.spinalCore.connect(url);
     }
     /**
-     *
      * Initialize connection with the hub and load graph
      * @return {*}
      * @memberof SpinalMain
@@ -101,14 +100,6 @@ class SpinalMain {
             await utils_workingPositions.bindControlpointToRelease(cp, ep, pos.name.get());
         });
         await Promise.all(promises);
-        // for (let pos of workingPositions){
-        //     // if(pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]"){
-        //         let cp = await utils_workingPositions.getControlPoint(pos.id.get());
-        //         let ep = await utils_workingPositions.getOccupancyBmsEndpoint(pos);
-        //         await utils_workingPositions.bindEndpointToControlpoint(cp,ep,pos.name.get());
-        //         await utils_workingPositions.bindControlpointToRelease(cp,ep,pos.name.get());
-        //     // }
-        // }
         console.log("** DONE ANALYSING WORKING POSITIONS **");
     }
     /**
@@ -124,12 +115,6 @@ class SpinalMain {
             await utils_workingPositions.updateControlEndpoint(cp.id.get(), 0, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
         });
         await Promise.all(promises);
-        // for (let pos of workingPositions){
-        //     // if(pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]"){
-        //         let cp = await utils_workingPositions.getControlPoint(pos.id.get());
-        //         await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other)
-        //     // }
-        // }
         console.log("** DONE RESETING WORKING POSITIONS **");
     }
 }
