@@ -34,6 +34,13 @@ const workingPositionsUtilities_1 = require("./workingPositionsUtilities");
 const attendanceUtilities_1 = require("./attendanceUtilities");
 const utils_workingPositions = new workingPositionsUtilities_1.UtilsWorkingPositions();
 const utils_attendance = new attendanceUtilities_1.UtilsAttendance();
+// Cette fonction est executée en cas de deconnexion au hub
+spinal_core_connectorjs_type_1.FileSystem.onConnectionError = (error_code) => {
+    setTimeout(() => {
+        console.log('STOP ERROR');
+        process.exit(error_code); // kill le process;
+    }, 5000);
+};
 class SpinalMain {
     constructor() {
         const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
@@ -59,49 +66,70 @@ class SpinalMain {
     }
     /**
      * The main function of the class
+     * @returns Promise
      */
     async MainJob() {
-        // await this.analysingWorkingPosition();
+        await this.analysingWorkingPosition();
         await this.analysingAttendance();
     }
+    /**
+     * Calculates the attendance ratio
+     * @returns Promise
+     */
     async analysingAttendance() {
         const contextName = constants.UBIGREEN_NETWORK.context;
         const networkName = constants.UBIGREEN_NETWORK.network;
+        console.log(" START ANALYSING ATTENDANCE ..... ");
         let ep = await utils_attendance.getUbigreenEndpoints(contextName, networkName);
         let cp = await utils_attendance.getAttendanceControlPoint();
         await utils_attendance.bindEndpointToControlpoint(cp, ep);
-        console.log(ep);
-        console.log(cp);
         console.log("** DONE ANALYSING ATTENDANCE **");
     }
+    /**
+     * Analyse the occupancy of all working positions
+     * @returns Promise
+     */
     async analysingWorkingPosition() {
         const workPositionContextName = constants.WORKING_POSITION.context;
         const workPositionCategoryName = constants.WORKING_POSITION.category;
+        console.log(" START ANALYSING WORKING POSITIONS ..... ");
         let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName, workPositionCategoryName);
-        for (let pos of workingPositions) {
-            if (pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]" ||
-                pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022056]" ||
-                pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022066]") {
-                let cp = await utils_workingPositions.getControlPoint(pos.id.get());
-                let ep = await utils_workingPositions.getOccupancyBmsEndpoint(pos);
-                await utils_workingPositions.bindEndpointToControlpoint(cp, ep, pos.name.get());
-                await utils_workingPositions.bindControlpointToRelease(cp, ep, pos.name.get());
-            }
-        }
+        let promises = workingPositions.map(async (pos) => {
+            let cp = await utils_workingPositions.getControlPoint(pos.id.get());
+            let ep = await utils_workingPositions.getOccupancyBmsEndpoint(pos);
+            await utils_workingPositions.bindEndpointToControlpoint(cp, ep, pos.name.get());
+            await utils_workingPositions.bindControlpointToRelease(cp, ep, pos.name.get());
+        });
+        await Promise.all(promises);
+        // for (let pos of workingPositions){
+        //     // if(pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]"){
+        //         let cp = await utils_workingPositions.getControlPoint(pos.id.get());
+        //         let ep = await utils_workingPositions.getOccupancyBmsEndpoint(pos);
+        //         await utils_workingPositions.bindEndpointToControlpoint(cp,ep,pos.name.get());
+        //         await utils_workingPositions.bindControlpointToRelease(cp,ep,pos.name.get());
+        //     // }
+        // }
         console.log("** DONE ANALYSING WORKING POSITIONS **");
     }
+    /**
+     * Reset all working positions at 19h
+     * @returns Promise
+     */
     async ReleaseJob() {
         const workPositionContextName = constants.WORKING_POSITION.context;
         const workPositionCategoryName = constants.WORKING_POSITION.category;
         let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName, workPositionCategoryName);
-        for (let pos of workingPositions) {
-            if (pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]" ||
-                pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022056]" ||
-                pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022066]") {
-                let cp = await utils_workingPositions.getControlPoint(pos.id.get());
-                await utils_workingPositions.updateControlEndpoint(cp.id.get(), 0, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
-            }
-        }
+        let promises = workingPositions.map(async (pos) => {
+            let cp = await utils_workingPositions.getControlPoint(pos.id.get());
+            await utils_workingPositions.updateControlEndpoint(cp.id.get(), 0, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
+        });
+        await Promise.all(promises);
+        // for (let pos of workingPositions){
+        //     // if(pos.name.get() == "Furniture_Office-Chairs_CIDER-LA-MANUFACTURE_4US-Chaise-de-bureau [1022055]"){
+        //         let cp = await utils_workingPositions.getControlPoint(pos.id.get());
+        //         await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other)
+        //     // }
+        // }
         console.log("** DONE RESETING WORKING POSITIONS **");
     }
 }

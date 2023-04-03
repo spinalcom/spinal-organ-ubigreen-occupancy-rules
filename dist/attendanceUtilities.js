@@ -34,8 +34,17 @@ exports.networkService = new spinal_model_bmsnetwork_1.NetworkService();
  * @class UtilsAttendance
  */
 class UtilsAttendance {
+    /**
+     * Returns a promise of IAttendanceObj with the model of the right endpoints
+     * @param  {string} contextName
+     * @param  {string} networkName
+     * @returns {Promise<IAttendanceObj>} Promise
+     */
     async getUbigreenEndpoints(contextName, networkName) {
-        let bmsEndPointsObj = {};
+        let bmsEndPointsObj = {
+            CAFET: undefined,
+            RIE: undefined
+        };
         let networkContext = (spinal_env_viewer_graph_service_1.SpinalGraphService.getContext(contextName));
         let contextId = networkContext.info.id.get();
         let [network] = await spinal_env_viewer_graph_service_1.SpinalGraphService.findInContext(contextId, contextId, (elt) => {
@@ -51,11 +60,11 @@ class UtilsAttendance {
                 for (let device of devices) {
                     if ((device.name.get().toLowerCase()).includes("rie")) {
                         let [bmsEndPoint] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
-                        bmsEndPointsObj["RIE"] = (bmsEndPoint);
+                        bmsEndPointsObj.RIE = (bmsEndPoint);
                     }
                     else if ((device.name.get().toLowerCase()).includes("cafet")) {
                         let [bmsEndPoint] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
-                        bmsEndPointsObj["CAFET"] = (bmsEndPoint);
+                        bmsEndPointsObj.CAFET = (bmsEndPoint);
                     }
                 }
                 return bmsEndPointsObj;
@@ -63,17 +72,18 @@ class UtilsAttendance {
         }
         return undefined;
     }
-    async getAttendanceControlPoint() {
-        let spatialContext = (spinal_env_viewer_graph_service_1.SpinalGraphService.getContextWithType("geographicContext"))[0];
-        let spatialId = spatialContext.info.id.get();
-        let [building] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(spatialId, ['hasGeographicBuilding']);
-        let cp = await this.getControlPoints(building.id.get());
-        return cp;
-    }
+    /**
+     * Returns a promise of IAttendanceObj with the model of the right control_endpoints
+     * @param  {string} id of the node
+     * @returns {Promise<IAttendanceObj>} Promise
+     */
     async getControlPoints(id) {
         const NODE_TO_CONTROL_POINTS_RELATION = "hasControlPoints";
         const CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION = "hasBmsEndpoint";
-        let bmsEndPointsObj = {};
+        let bmsEndPointsObj = {
+            CAFET: undefined,
+            RIE: undefined
+        };
         let allControlPoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(id, [NODE_TO_CONTROL_POINTS_RELATION]);
         if (allControlPoints.length != 0) {
             for (let controlPoint of allControlPoints) {
@@ -81,9 +91,9 @@ class UtilsAttendance {
                 if (allBmsEndpoints.length != 0) {
                     for (let bmsEndPoint of allBmsEndpoints) {
                         if (bmsEndPoint.name.get().toLowerCase().includes("rie"))
-                            bmsEndPointsObj["RIE"] = (bmsEndPoint);
+                            bmsEndPointsObj.RIE = (bmsEndPoint);
                         else if (bmsEndPoint.name.get().toLowerCase().includes("cafet"))
-                            bmsEndPointsObj["CAFET"] = (bmsEndPoint);
+                            bmsEndPointsObj.CAFET = (bmsEndPoint);
                     }
                     return bmsEndPointsObj;
                 }
@@ -91,6 +101,22 @@ class UtilsAttendance {
         }
         return undefined;
     }
+    /**
+     * Returns a promise of IAttendanceObj with the model of the right control_endpoints for the building node
+     * @returns {Promise<IAttendanceObj>} Promise
+     */
+    async getAttendanceControlPoint() {
+        let spatialContext = (spinal_env_viewer_graph_service_1.SpinalGraphService.getContextWithType("geographicContext"))[0];
+        let spatialId = spatialContext.info.id.get();
+        let [building] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(spatialId, ['hasGeographicBuilding']);
+        let cp = await this.getControlPoints(building.id.get());
+        return cp;
+    }
+    /**
+     * Returns the capacity attribute of the node
+     * @param  {string} id of the node
+     * @returns {Promise<SpinalAttribute>} Promise
+     */
     async getCapacityAttribute(id) {
         const LABEL = constants.CAPACITY_ATTRIBUTE;
         let node = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(id);
@@ -98,13 +124,48 @@ class UtilsAttendance {
         return attribute;
     }
     /**
-    * Function that updates a control endpoint value
-    * @param  {string} targetId - Id of the Node to update
-    * @param  {any} valueToPush - The new value
-    * @param  {any} dataType - Type of the data ( see InputDataEndpoint data types)
-    * @param  {any} type - Type ( not really used )
-    * @returns Promise
-    */
+     * Function that binds to the endpoints and update the control_endpoints with the right value of attendance ratio
+     * The update is applied at the first run
+     * @param  {IAttendanceObj} controlPointObj
+     * @param  {IAttendanceObj} endpointObj
+     * @returns {void} Promise
+     */
+    async bindEndpointToControlpoint(controlPointObj, endpointObj) {
+        for (let x in endpointObj) {
+            if (endpointObj[x] != undefined) {
+                let endpointId = endpointObj[x].id.get();
+                let nodeEP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(endpointId);
+                let endpointValueModel = (await nodeEP.getElement(true)).currentValue;
+                let controlPointId = controlPointObj[x].id.get();
+                let nodeCP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(controlPointId);
+                //bind le controlPoint aux endpoint
+                endpointValueModel.bind(async () => {
+                    let capacity = await this.getCapacityAttribute(controlPointId);
+                    let ratio = this.calculateRatio(endpointValueModel.get(), Number(capacity.value));
+                    await this.updateControlEndpoint(controlPointId, ratio, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
+                    console.log(nodeCP.info.name.get() + " updated ==> value = " + ratio);
+                }, true);
+            }
+        }
+    }
+    /**
+     * Calculates the attendance ration and retruns it with two digits after the decimal point
+     * @param  {number} currentValue
+     * @param  {number} totalCapacity
+     * @returns {number}
+     */
+    calculateRatio(currentValue, totalCapacity) {
+        let result = (currentValue / totalCapacity) * 100;
+        return Math.round(result * 100) / 100;
+    }
+    /**
+     * Function that updates a control endpoint value
+     * @param  {string} targetId - Id of the Node to update
+     * @param  {any} valueToPush - The new value
+     * @param  {any} dataType - Type of the data ( see InputDataEndpoint data types)
+     * @param  {any} type - Type ( not really used )
+     * @returns Promise
+     */
     async updateControlEndpoint(targetId, valueToPush, dataType, type) {
         let node = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(targetId);
         spinal_env_viewer_graph_service_1.SpinalGraphService._addNode(node);
@@ -126,31 +187,6 @@ class UtilsAttendance {
         else {
             console.log(valueToPush + " value to push in node : " + target.info.name.get() + " -- ABORTED !");
         }
-    }
-    async bindEndpointToControlpoint(controlPointObj, endpointObj) {
-        for (let x in endpointObj) {
-            if (endpointObj[x] != undefined) {
-                let endpointId = endpointObj[x].id.get();
-                let nodeEP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(endpointId);
-                let endpointValueModel = (await nodeEP.getElement(true)).currentValue;
-                let controlPointId = controlPointObj[x].id.get();
-                let nodeCP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(controlPointId);
-                //bind le controlPoint aux endpoint
-                endpointValueModel.bind(async () => {
-                    let capacity = await this.getCapacityAttribute(controlPointId);
-                    let ratio = await this.calculateRatio(endpointValueModel.get(), capacity.value);
-                    console.log("current value : ", endpointValueModel.get());
-                    console.log("capacity :" + capacity.value + "====> " + nodeCP.info.name.get());
-                    console.log("ration :", ratio);
-                    // let controlPointValue = (await nodeCP.getElement(true)).currentValue.get();
-                    await this.updateControlEndpoint(controlPointId, ratio, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
-                }, true);
-            }
-        }
-    }
-    async calculateRatio(value, total) {
-        let result = (value / total) * 100;
-        return Math.round(result * 10) / 10;
     }
 }
 exports.UtilsAttendance = UtilsAttendance;

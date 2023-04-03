@@ -23,19 +23,19 @@
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UBIGREEN_NETWORK = exports.CAPACITY_ATTRIBUTE = exports.WORKING_HOURS = exports.INTERVAL_TIME = exports.WORKING_POSITION = void 0;
+exports.WORKING_HOURS = exports.INTERVAL_TIME = exports.CAPACITY_ATTRIBUTE = exports.UBIGREEN_NETWORK = exports.WORKING_POSITION = void 0;
 exports.WORKING_POSITION = Object.freeze({
     context: "Contexte équipement capteur",
     category: "Ubigreen"
 });
-exports.INTERVAL_TIME = 60000;
-exports.WORKING_HOURS = Object.freeze({
-    start: 7,
-    end: 18
-});
-exports.CAPACITY_ATTRIBUTE = "capacity";
 exports.UBIGREEN_NETWORK = Object.freeze({
     context: "Network Ubigreen production",
     network: "SmartFlow"
+});
+exports.CAPACITY_ATTRIBUTE = "capacity";
+exports.INTERVAL_TIME = 300000; //ms
+exports.WORKING_HOURS = Object.freeze({
+    start: 7,
+    end: 19
 });
 //# sourceMappingURL=constants.js.map

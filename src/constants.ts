@@ -29,16 +29,14 @@ export const WORKING_POSITION = Object.freeze({
     category: "Ubigreen"
 });
 
-export const INTERVAL_TIME = 60000;
-
-export const WORKING_HOURS = Object.freeze({
-    start: 7,
-    end: 18
-});
-
-export const CAPACITY_ATTRIBUTE = "capacity";
-
 export const UBIGREEN_NETWORK = Object.freeze({
     context: "Network Ubigreen production",
     network: "SmartFlow"
+});
+
+export const CAPACITY_ATTRIBUTE = "capacity";
+export const INTERVAL_TIME = 300000; //ms
+export const WORKING_HOURS = Object.freeze({
+    start: 7,
+    end: 19
 });

@@ -24,11 +24,8 @@
 
 import {SpinalGraphService, SpinalNodeRef} from "spinal-env-viewer-graph-service";
 import {SpinalNode} from "spinal-model-graph"
-import {spinalCore,Process} from "spinal-core-connectorjs_type";
 import * as constants from "./constants"
 import { NetworkService, InputDataEndpoint, InputDataEndpointDataType, InputDataEndpointType }  from "spinal-model-bmsnetwork"
-import { SpinalAttribute } from "spinal-models-documentation/declarations";
-import { attributeService, ICategory } from "spinal-env-viewer-plugin-documentation-service";
 
 export const networkService = new NetworkService()
 
@@ -50,14 +47,15 @@ export const networkService = new NetworkService()
         this.CONTROL_POINT_RELEASE = {};
         this.DEFAULT_INTERVAL_TIME = constants.INTERVAL_TIME;
         this.WORKING_HOURS = constants.WORKING_HOURS;
-
-
       }
    
+
+
     /**
+     * Search and returns a list of BIMObject models (working positions)
      * @param  {string} contextName
      * @param  {string} categoryName
-     * @returns Promise
+     * @returns {Promise<Array<SpinalNodeRef>>} 
      */
     public async getWorkPositions(contextName: string, categoryName: string): Promise<Array<SpinalNodeRef>> {
         let context = undefined;
@@ -86,8 +84,11 @@ export const networkService = new NetworkService()
 
 
 
-
-
+    /**
+     * Returns all control_endpoints of the node
+     * @param  {string} workpositionId - id of the nodes
+     * @returns {Promise<SpinalNodeRef>} Promise
+     */
     public async getControlPoint(workpositionId: string): Promise<SpinalNodeRef>{
         const NODE_TO_CONTROL_POINTS_RELATION = "hasControlPoints";
         const CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION = "hasBmsEndpoint";
@@ -95,7 +96,6 @@ export const networkService = new NetworkService()
         let allControlPoints = await SpinalGraphService.getChildren(workpositionId, [NODE_TO_CONTROL_POINTS_RELATION]);
         if(allControlPoints.length!=0){
             for (let controlPoint of allControlPoints) {
-                // console.log(controlPoint);
                 let allBmsEndpoints = await SpinalGraphService.getChildren(controlPoint.id.get(), [CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION]);
                 if(allBmsEndpoints.length!=0){
                     for (let bmsEndPoint of allBmsEndpoints) {
@@ -110,7 +110,11 @@ export const networkService = new NetworkService()
 
 
 
-
+    /**
+     * Returns the occupancy endpoint of a node
+     * @param  {SpinalNodeRef} workPositionModel - model of the node
+     * @returns {Promise<SpinalNodeRef>} Promise
+     */
     public async getOccupancyBmsEndpoint(workPositionModel: SpinalNodeRef): Promise<SpinalNodeRef>{
         if(workPositionModel!=undefined){
             let bmsDevices = await SpinalGraphService.getChildren(workPositionModel.id.get(),["hasBmsDevice"]);
@@ -130,7 +134,14 @@ export const networkService = new NetworkService()
  
 
 
-
+    /**
+     * Function that binds to the endpoints and update the control_endpoints after analysing the use cases of occupancy
+     * The update is applied at the first run
+     * @param  {SpinalNodeRef} controlPoint - model of the control_endpoint
+     * @param  {SpinalNodeRef} endpoint - model of the endpoint
+     * @param  {string} workPositionName - BimObject name
+     * @returns {void} Promise
+     */
     public async bindEndpointToControlpoint(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPositionName: string): Promise<void>{
         if(controlPoint!=undefined && endpoint!=undefined){
             let endpointId = endpoint.id.get();
@@ -143,64 +154,24 @@ export const networkService = new NetworkService()
             //bind le controlPoint aux endpoint
             endpointValueModel.bind(async () =>{
                 let hour = new Date().getHours();
-                
                 if(hour>=this.WORKING_HOURS["start"] || hour < this.WORKING_HOURS["end"]){
-
-                
-                
                     let controlPointValue = (await nodeCP.getElement(true)).currentValue.get();
-
-                    console.log(workPositionName)
-                    console.log("ep = ",endpointValueModel.get())
-                    console.log("cp = ",controlPointValue)
-
                     await this.useCases(endpointId,endpointValueModel.get(),controlPointId,controlPointValue,workPositionName)
-                //         // endpoint = 0 to 1
-                // if(endpointValueModel.get()=="1" && controlPointValue =="0"){
-                //     console.log("Updating << "+ workPositionName +" >>");
-                //     let date = new Date().getTime();
-
-                //     // if(Object.keys(this.ENDPOINTS_LAST_MODIFICATION).length !=0){
-                //     if(this.ENDPOINTS_LAST_MODIFICATION[endpointId] != undefined){
-                //         // (await nodeCP.getElement(true)).currentValue.set(endpointValueModel.get());
-                //         await this.updateControlEndpoint(controlPointId, endpointValueModel.get(), InputDataEndpointDataType.Real, InputDataEndpointType.Other);
-                //         this.ENDPOINTS_LAST_MODIFICATION[endpointId] = date;
-                //     }
-                //     else{
-                //         this.ENDPOINTS_LAST_MODIFICATION[endpointId] = date;
-                //         // (await nodeCP.getElement(true)).currentValue.set(endpointValueModel.get());
-                //         await this.updateControlEndpoint(controlPointId, endpointValueModel.get(), InputDataEndpointDataType.Real, InputDataEndpointType.Other);
-
-                //     }
-                    
-                // }
-                // // endpoint = 1 to 0
-                // else if(endpointValueModel.get()=="0" && controlPointValue =="1"){
-                //     console.log("Updating << "+ workPositionName +" >>");
-                //     let date = new Date().getTime();
-                //     let interval = this.calculateIntervalTime(endpointId,date);
-                //     if(interval<5){        //last value has less than 5 minutes
-                //         // (await nodeCP.getElement(true)).currentValue.set(endpointValueModel.get());
-                //         await this.updateControlEndpoint(controlPointId, endpointValueModel.get(), InputDataEndpointDataType.Real, InputDataEndpointType.Other);
-                //         delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
-                //     }
-                //     else{
-                        
-                //     }
-                // }
-                // console.log("result :",this.ENDPOINTS_LAST_MODIFICATION);
-
                 }
             },true);
-                    
-                
-            
         }
     }
 
 
 
-
+    /**
+     * Function that binds to the control_endpoints and reset their values if the user send a release order (value=2) 
+     * The update is applied at the first run
+     * @param  {SpinalNodeRef} controlPoint - model of the control_endpoint
+     * @param  {SpinalNodeRef} endpoint - model of the endpoint
+     * @param  {string} workPositionName - BimObject name
+     * @returns {void} Promise
+     */
     public async bindControlpointToRelease(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPositionName: string): Promise<void>{
         if(controlPoint!=undefined && endpoint!=undefined){
             let endpointId = endpoint.id.get();
@@ -214,100 +185,96 @@ export const networkService = new NetworkService()
             controlPointValueModel.bind(async () =>{
                 let hour = new Date().getHours();
                 if(hour>=this.WORKING_HOURS["start"] || hour < this.WORKING_HOURS["end"]){
-                    
                     let endpointValue = (await nodeEP.getElement(true)).currentValue.get();
-
                     if(controlPointValueModel.get()=="2"){
-                        // await this.updateControlEndpoint(controlPointId, "1", InputDataEndpointDataType.Real, InputDataEndpointType.Other);
-                        console.log(workPositionName)
-                        console.log("ep = ",endpointValue)
-                        console.log("cp = ",controlPointValueModel.get())
                         await this.useCasesRelease(endpointId,endpointValue,controlPointId,controlPointValueModel.get(),workPositionName)
-
-
                     }
-
                 }
-            },false);
-                    
-                
-            
+            },true);
         }
     }
 
 
 
-
-    private async useCasesRelease(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string){
-        
+    /**
+     * Function that analyse the multiple use cases for releasing the occupancy of a working position 
+     * @param  {string} endpointId
+     * @param  {string} endpointValue
+     * @param  {string} controlPointId
+     * @param  {string} controlPointValue
+     * @param  {string} workPositionName
+     * @returns {void} Promise
+     */
+    private async useCasesRelease(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string): Promise<void>{
         if(endpointValue=="0" && controlPointValue =="2"){
             await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
+            console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
         }
-
         else if(endpointValue=="1" && controlPointValue =="2"){
             let date = new Date().getTime();
             this.CONTROL_POINT_RELEASE[endpointId] = date;
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
             await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
-            await this.useCases(endpointId,endpointValue,controlPointId,controlPointValue,workPositionName)
-
-            
+            await this.useCases(endpointId,endpointValue,controlPointId,controlPointValue,workPositionName)   
         }
-
-
-        console.log("result :",this.CONTROL_POINT_RELEASE);
     }
 
 
 
-
-    private async useCases(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string){
+    /**
+     * Function that analyse the multiple use cases for the occupancy of a working position  
+     * @param  {string} endpointId
+     * @param  {string} endpointValue
+     * @param  {string} controlPointId
+     * @param  {string} controlPointValue
+     * @param  {string} workPositionName
+     * @returns {void} Promise
+     */
+    private async useCases(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string): Promise<void>{
         // endpoint = 0 to 1
         if(endpointValue=="1" && controlPointValue =="0"){
             let date = new Date().getTime();
-
             this.ENDPOINTS_LAST_MODIFICATION[endpointId] = date;
-            await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
-            
+            await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other); 
+            console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
         }
 
         // endpoint = 1 to 0
         else if(endpointValue=="0" && controlPointValue =="1"){
-            let date = new Date().getTime();
-            if(this.ENDPOINTS_LAST_MODIFICATION[endpointId] != undefined){                   //if it exists 
+            let date = new Date().getTime(); 
+            if(this.ENDPOINTS_LAST_MODIFICATION[endpointId] != undefined){                   
                 let interval = this.calculateIntervalTime(this.ENDPOINTS_LAST_MODIFICATION[endpointId],date);
                 if(interval<this.DEFAULT_INTERVAL_TIME){        //last value has less than 5 minutes
-                    // (await nodeCP.getElement(true)).currentValue.set(endpointValueModel.get());
                     await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
                     delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
+                    console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
                 }
 
             }
-            // release
+            // for release
             else if(this.CONTROL_POINT_RELEASE[endpointId] != undefined){
                 let interval = this.calculateIntervalTime(this.CONTROL_POINT_RELEASE[endpointId],date);
                 if(interval<this.DEFAULT_INTERVAL_TIME){        //last value has less than 5 minutes
                     await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
                     delete this.CONTROL_POINT_RELEASE[endpointId];
+                    console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
                 }
             }
         }
-        
-
-        console.log("result-modification :",this.ENDPOINTS_LAST_MODIFICATION);
-        console.log("result-relsease:",this.CONTROL_POINT_RELEASE);
-
     }
 
 
 
-    private calculateIntervalTime (lastDate: number, newDate: number){
-     
+    /**
+     * Calculates the interval time between two dates
+     * @param  {number} lastDate
+     * @param  {number} newDate
+     * @returns number
+     */
+    private calculateIntervalTime (lastDate: number, newDate: number): number{
         let interval = newDate - lastDate;    //ms
         // let minutes = interval / 60000;     //min
-
-        console.log("time : ",interval);
         return interval
    }
     
@@ -344,13 +311,6 @@ export const networkService = new NetworkService()
             console.log(valueToPush + " value to push in node : " + target.info.name.get() + " -- ABORTED !");
         }
     }
-
-
-
-
-
-
-
 
 
 

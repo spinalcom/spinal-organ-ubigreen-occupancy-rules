@@ -1,23 +1,61 @@
+import { SpinalNodeRef } from "spinal-env-viewer-graph-service";
 import { NetworkService } from "spinal-model-bmsnetwork";
 export declare const networkService: NetworkService;
+export interface IAttendanceObj {
+    CAFET: SpinalNodeRef;
+    RIE: SpinalNodeRef;
+}
 /**
  * @export
  * @class UtilsAttendance
  */
 export declare class UtilsAttendance {
-    getUbigreenEndpoints(contextName: string, networkName: string): Promise<{}>;
-    getAttendanceControlPoint(): Promise<object>;
+    /**
+     * Returns a promise of IAttendanceObj with the model of the right endpoints
+     * @param  {string} contextName
+     * @param  {string} networkName
+     * @returns {Promise<IAttendanceObj>} Promise
+     */
+    getUbigreenEndpoints(contextName: string, networkName: string): Promise<IAttendanceObj>;
+    /**
+     * Returns a promise of IAttendanceObj with the model of the right control_endpoints
+     * @param  {string} id of the node
+     * @returns {Promise<IAttendanceObj>} Promise
+     */
     private getControlPoints;
+    /**
+     * Returns a promise of IAttendanceObj with the model of the right control_endpoints for the building node
+     * @returns {Promise<IAttendanceObj>} Promise
+     */
+    getAttendanceControlPoint(): Promise<IAttendanceObj>;
+    /**
+     * Returns the capacity attribute of the node
+     * @param  {string} id of the node
+     * @returns {Promise<SpinalAttribute>} Promise
+     */
     private getCapacityAttribute;
     /**
-    * Function that updates a control endpoint value
-    * @param  {string} targetId - Id of the Node to update
-    * @param  {any} valueToPush - The new value
-    * @param  {any} dataType - Type of the data ( see InputDataEndpoint data types)
-    * @param  {any} type - Type ( not really used )
-    * @returns Promise
-    */
-    private updateControlEndpoint;
-    bindEndpointToControlpoint(controlPointObj: object, endpointObj: object): Promise<void>;
+     * Function that binds to the endpoints and update the control_endpoints with the right value of attendance ratio
+     * The update is applied at the first run
+     * @param  {IAttendanceObj} controlPointObj
+     * @param  {IAttendanceObj} endpointObj
+     * @returns {void} Promise
+     */
+    bindEndpointToControlpoint(controlPointObj: IAttendanceObj, endpointObj: IAttendanceObj): Promise<void>;
+    /**
+     * Calculates the attendance ration and retruns it with two digits after the decimal point
+     * @param  {number} currentValue
+     * @param  {number} totalCapacity
+     * @returns {number}
+     */
     private calculateRatio;
+    /**
+     * Function that updates a control endpoint value
+     * @param  {string} targetId - Id of the Node to update
+     * @param  {any} valueToPush - The new value
+     * @param  {any} dataType - Type of the data ( see InputDataEndpoint data types)
+     * @param  {any} type - Type ( not really used )
+     * @returns Promise
+     */
+    private updateControlEndpoint;
 }
