@@ -1,6 +1,6 @@
 {
   "name": "spinal-organ-ubigreen-occupancy-rules",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "organ that calculates and analyse ubigreen occupancy rules",
   "main": "index.js",
   "scripts": {

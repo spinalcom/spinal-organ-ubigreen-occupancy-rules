@@ -142,8 +142,17 @@ class UtilsAttendance {
                 endpointValueModel.bind(async () => {
                     let capacity = await this.getCapacityAttribute(controlPointId);
                     let ratio = this.calculateRatio(endpointValueModel.get(), Number(capacity.value));
-                    await this.updateControlEndpoint(controlPointId, ratio, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
-                    console.log(nodeCP.info.name.get() + " updated ==> value = " + ratio);
+                    let value = "";
+                    if (ratio >= 0 && ratio <= 30)
+                        value = "Peu fréquenté";
+                    else if (ratio > 30 && ratio <= 55)
+                        value = "Assez fréquenté";
+                    else if (ratio > 55 && ratio <= 80)
+                        value = "Très fréquenté";
+                    else if (ratio > 80)
+                        value = "Saturé";
+                    await this.updateControlEndpoint(controlPointId, value, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
+                    console.log(nodeCP.info.name.get() + " updated ==> value = " + value);
                 }, true);
             }
         }
