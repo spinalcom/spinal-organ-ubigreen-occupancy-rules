@@ -4,6 +4,7 @@ export declare const networkService: NetworkService;
 export interface IAttendanceObj {
     CAFET: SpinalNodeRef;
     RIE: SpinalNodeRef;
+    ENTREE: SpinalNodeRef;
 }
 /**
  * @export

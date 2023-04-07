@@ -33,7 +33,8 @@ export const networkService = new NetworkService()
 
 export interface IAttendanceObj {
     CAFET: SpinalNodeRef,
-    RIE: SpinalNodeRef
+    RIE: SpinalNodeRef,
+    ENTREE: SpinalNodeRef
 }
 
 
@@ -54,7 +55,8 @@ export interface IAttendanceObj {
     public async getUbigreenEndpoints(contextName: string,networkName: string ): Promise<IAttendanceObj>{
         let bmsEndPointsObj: IAttendanceObj = {   
             CAFET: undefined,
-            RIE: undefined
+            RIE: undefined,
+            ENTREE: undefined
         };
 
         let networkContext = (SpinalGraphService.getContext(contextName));
@@ -79,6 +81,10 @@ export interface IAttendanceObj {
                         let [bmsEndPoint] = await SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
                         bmsEndPointsObj.CAFET=(bmsEndPoint);
                     }    
+                    else if((device.name.get().toLowerCase()).includes("entree")){
+                        let [bmsEndPoint] = await SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
+                        bmsEndPointsObj.ENTREE=(bmsEndPoint);
+                    }   
                 }
                 return bmsEndPointsObj;
             }  
@@ -98,7 +104,8 @@ export interface IAttendanceObj {
         const CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION = "hasBmsEndpoint";
         let bmsEndPointsObj: IAttendanceObj = {   
             CAFET: undefined,
-            RIE: undefined
+            RIE: undefined,
+            ENTREE : undefined
         };
 
         let allControlPoints = await SpinalGraphService.getChildren(id, [NODE_TO_CONTROL_POINTS_RELATION]);
@@ -109,7 +116,7 @@ export interface IAttendanceObj {
                     for (let bmsEndPoint of allBmsEndpoints) {
                         if(bmsEndPoint.name.get().toLowerCase().includes("rie"))  bmsEndPointsObj.RIE=(bmsEndPoint);
                         else if(bmsEndPoint.name.get().toLowerCase().includes("cafet"))  bmsEndPointsObj.CAFET=(bmsEndPoint);
-
+                        else if(bmsEndPoint.name.get().toLowerCase().includes("entree"))  bmsEndPointsObj.ENTREE=(bmsEndPoint);
                     }
                     return bmsEndPointsObj;
                 }  
@@ -169,12 +176,14 @@ export interface IAttendanceObj {
                 endpointValueModel.bind(async () =>{
                     let capacity = await this.getCapacityAttribute(controlPointId);
                     let ratio = this.calculateRatio(endpointValueModel.get(),Number(capacity.value));
-                    let value = "";
-
-                    if(ratio>=0 && ratio<=30) value="Peu fréquenté";
-                    else if(ratio>30 && ratio<=55) value="Assez fréquenté";
-                    else if(ratio>55 && ratio<=80) value="Très fréquenté";
-                    else if(ratio>80) value="Saturé";
+                    let value = undefined;
+                    if(nodeCP.info.name.get().toLowerCase().includes("entree")) value = ratio;
+                    else{
+                        if(ratio>=0 && ratio<=30) value="Peu fréquenté";
+                        else if(ratio>30 && ratio<=55) value="Assez fréquenté";
+                        else if(ratio>55 && ratio<=80) value="Très fréquenté";
+                        else if(ratio>80) value="Saturé";
+                    }
 
                     await this.updateControlEndpoint(controlPointId,value, InputDataEndpointDataType.Real, InputDataEndpointType.Other)         
                     console.log(nodeCP.info.name.get() + " updated ==> value = "+ value);

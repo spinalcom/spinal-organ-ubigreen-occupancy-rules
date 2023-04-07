@@ -43,7 +43,8 @@ class UtilsAttendance {
     async getUbigreenEndpoints(contextName, networkName) {
         let bmsEndPointsObj = {
             CAFET: undefined,
-            RIE: undefined
+            RIE: undefined,
+            ENTREE: undefined
         };
         let networkContext = (spinal_env_viewer_graph_service_1.SpinalGraphService.getContext(contextName));
         let contextId = networkContext.info.id.get();
@@ -66,6 +67,10 @@ class UtilsAttendance {
                         let [bmsEndPoint] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
                         bmsEndPointsObj.CAFET = (bmsEndPoint);
                     }
+                    else if ((device.name.get().toLowerCase()).includes("entree")) {
+                        let [bmsEndPoint] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
+                        bmsEndPointsObj.ENTREE = (bmsEndPoint);
+                    }
                 }
                 return bmsEndPointsObj;
             }
@@ -82,7 +87,8 @@ class UtilsAttendance {
         const CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION = "hasBmsEndpoint";
         let bmsEndPointsObj = {
             CAFET: undefined,
-            RIE: undefined
+            RIE: undefined,
+            ENTREE: undefined
         };
         let allControlPoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(id, [NODE_TO_CONTROL_POINTS_RELATION]);
         if (allControlPoints.length != 0) {
@@ -94,6 +100,8 @@ class UtilsAttendance {
                             bmsEndPointsObj.RIE = (bmsEndPoint);
                         else if (bmsEndPoint.name.get().toLowerCase().includes("cafet"))
                             bmsEndPointsObj.CAFET = (bmsEndPoint);
+                        else if (bmsEndPoint.name.get().toLowerCase().includes("entree"))
+                            bmsEndPointsObj.ENTREE = (bmsEndPoint);
                     }
                     return bmsEndPointsObj;
                 }
@@ -142,15 +150,19 @@ class UtilsAttendance {
                 endpointValueModel.bind(async () => {
                     let capacity = await this.getCapacityAttribute(controlPointId);
                     let ratio = this.calculateRatio(endpointValueModel.get(), Number(capacity.value));
-                    let value = "";
-                    if (ratio >= 0 && ratio <= 30)
-                        value = "Peu fréquenté";
-                    else if (ratio > 30 && ratio <= 55)
-                        value = "Assez fréquenté";
-                    else if (ratio > 55 && ratio <= 80)
-                        value = "Très fréquenté";
-                    else if (ratio > 80)
-                        value = "Saturé";
+                    let value = undefined;
+                    if (nodeCP.info.name.get().toLowerCase().includes("entree"))
+                        value = ratio;
+                    else {
+                        if (ratio >= 0 && ratio <= 30)
+                            value = "Peu fréquenté";
+                        else if (ratio > 30 && ratio <= 55)
+                            value = "Assez fréquenté";
+                        else if (ratio > 55 && ratio <= 80)
+                            value = "Très fréquenté";
+                        else if (ratio > 80)
+                            value = "Saturé";
+                    }
                     await this.updateControlEndpoint(controlPointId, value, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
                     console.log(nodeCP.info.name.get() + " updated ==> value = " + value);
                 }, true);
