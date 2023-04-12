@@ -23,7 +23,7 @@
  */
 
 import {SpinalGraphService,SpinalNodeRef} from "spinal-env-viewer-graph-service";
-import {spinalCore,Process, FileSystem} from "spinal-core-connectorjs_type";
+import {spinalCore,Process, FileSystem, Val} from "spinal-core-connectorjs_type";
 import {InputDataEndpointDataType, InputDataEndpointType }  from "spinal-model-bmsnetwork"
 import cron = require('node-cron');
 import * as config from "../config";
@@ -46,11 +46,12 @@ FileSystem.onConnectionError = (error_code: number) => {
 
 class SpinalMain {
 
-
+    stopTime : Number;
     connect: spinal.FileSystem;
     constructor() { 
         const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
-        this.connect = spinalCore.connect(url)
+        this.connect = spinalCore.connect(url);
+        this.stopTime = constants.WORKING_HOURS.end;
     }
     
 
@@ -163,9 +164,9 @@ async function Main(): Promise<void> {
         const spinalMain = new SpinalMain();
         await spinalMain.init();
         await spinalMain.MainJob();
-        
-        cron.schedule('0 19 * * *', async (): Promise<void> => {
-            console.log(`*** It's 19h - Organ is stopped  ***`);
+
+        cron.schedule(`0 ${spinalMain.stopTime} * * *`, async (): Promise<void> => {
+            console.log(`*** It's ${spinalMain.stopTime}h - Organ is stopped  ***`);
             await spinalMain.ReleaseJob();
         });
     } 

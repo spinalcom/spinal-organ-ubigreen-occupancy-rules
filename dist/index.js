@@ -45,6 +45,7 @@ class SpinalMain {
     constructor() {
         const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
         this.connect = spinal_core_connectorjs_type_1.spinalCore.connect(url);
+        this.stopTime = constants.WORKING_HOURS.end;
     }
     /**
      * Initialize connection with the hub and load graph
@@ -124,8 +125,8 @@ async function Main() {
         const spinalMain = new SpinalMain();
         await spinalMain.init();
         await spinalMain.MainJob();
-        cron.schedule('0 19 * * *', async () => {
-            console.log(`*** It's 19h - Organ is stopped  ***`);
+        cron.schedule(`0 ${spinalMain.stopTime} * * *`, async () => {
+            console.log(`*** It's ${spinalMain.stopTime}h - Organ is stopped  ***`);
             await spinalMain.ReleaseJob();
         });
     }
