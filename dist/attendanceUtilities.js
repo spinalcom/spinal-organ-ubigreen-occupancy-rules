@@ -140,7 +140,7 @@ class UtilsAttendance {
      */
     async bindEndpointToControlpoint(controlPointObj, endpointObj) {
         for (let x in endpointObj) {
-            if (endpointObj[x] != undefined) {
+            if (endpointObj[x] != undefined && x != "ENTREE") {
                 let endpointId = endpointObj[x].id.get();
                 let nodeEP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(endpointId);
                 let endpointValueModel = (await nodeEP.getElement(true)).currentValue;
@@ -151,20 +151,18 @@ class UtilsAttendance {
                     let capacity = await this.getCapacityAttribute(controlPointId);
                     let ratio = this.calculateRatio(endpointValueModel.get(), Number(capacity.value));
                     let value = undefined;
-                    if (nodeCP.info.name.get().toLowerCase().includes("entree"))
-                        value = ratio;
-                    else {
-                        if (ratio >= 0 && ratio <= 30)
-                            value = "Peu fréquenté";
-                        else if (ratio > 30 && ratio <= 55)
-                            value = "Assez fréquenté";
-                        else if (ratio > 55 && ratio <= 80)
-                            value = "Très fréquenté";
-                        else if (ratio > 80)
-                            value = "Saturé";
-                    }
+                    // if(nodeCP.info.name.get().toLowerCase().includes("entree")) value = ratio;
+                    // else{
+                    if (ratio >= 0 && ratio <= 30)
+                        value = "Peu fréquenté";
+                    else if (ratio > 30 && ratio <= 55)
+                        value = "Assez fréquenté";
+                    else if (ratio > 55 && ratio <= 80)
+                        value = "Très fréquenté";
+                    else if (ratio > 80)
+                        value = "Saturé";
+                    // }
                     await this.updateControlEndpoint(controlPointId, value, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
-                    console.log(nodeCP.info.name.get() + " updated ==> value = " + value);
                 }, true);
             }
         }
@@ -204,6 +202,7 @@ class UtilsAttendance {
             };
             const time = new Date();
             await exports.networkService.updateEndpoint(target, input, time);
+            console.log(node.info.name.get() + " updated ==> value = " + valueToPush);
         }
         else {
             console.log(valueToPush + " value to push in node : " + target.info.name.get() + " -- ABORTED !");

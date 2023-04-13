@@ -1,5 +1,6 @@
 import { SpinalNodeRef } from "spinal-env-viewer-graph-service";
 import { NetworkService } from "spinal-model-bmsnetwork";
+import { SpinalAttribute } from "spinal-models-documentation/declarations";
 export declare const networkService: NetworkService;
 export interface IAttendanceObj {
     CAFET: SpinalNodeRef;
@@ -34,7 +35,7 @@ export declare class UtilsAttendance {
      * @param  {string} id of the node
      * @returns {Promise<SpinalAttribute>} Promise
      */
-    private getCapacityAttribute;
+    getCapacityAttribute(id: string): Promise<SpinalAttribute>;
     /**
      * Function that binds to the endpoints and update the control_endpoints with the right value of attendance ratio
      * The update is applied at the first run
@@ -49,7 +50,7 @@ export declare class UtilsAttendance {
      * @param  {number} totalCapacity
      * @returns {number}
      */
-    private calculateRatio;
+    calculateRatio(currentValue: number, totalCapacity: number): number;
     /**
      * Function that updates a control endpoint value
      * @param  {string} targetId - Id of the Node to update
@@ -58,5 +59,5 @@ export declare class UtilsAttendance {
      * @param  {any} type - Type ( not really used )
      * @returns Promise
      */
-    private updateControlEndpoint;
+    updateControlEndpoint(targetId: string, valueToPush: any, dataType: any, type: any): Promise<void>;
 }

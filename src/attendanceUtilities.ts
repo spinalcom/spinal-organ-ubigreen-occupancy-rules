@@ -146,7 +146,7 @@ export interface IAttendanceObj {
      * @param  {string} id of the node
      * @returns {Promise<SpinalAttribute>} Promise
      */
-    private async getCapacityAttribute(id: string): Promise<SpinalAttribute> {
+    public async getCapacityAttribute(id: string): Promise<SpinalAttribute> {
         const LABEL = constants.CAPACITY_ATTRIBUTE;
         let node = SpinalGraphService.getRealNode(id);
         const [attribute] = await attributeService.getAttributesByCategory(node, "default",LABEL);
@@ -164,7 +164,7 @@ export interface IAttendanceObj {
      */
     public async bindEndpointToControlpoint(controlPointObj: IAttendanceObj, endpointObj: IAttendanceObj): Promise<void>{
         for(let x in endpointObj){
-            if(endpointObj[x]!=undefined){
+            if(endpointObj[x]!=undefined && x!="ENTREE"){
                 let endpointId = endpointObj[x].id.get();
                 let nodeEP = SpinalGraphService.getRealNode(endpointId);
                 let endpointValueModel = (await nodeEP.getElement(true)).currentValue;
@@ -177,16 +177,15 @@ export interface IAttendanceObj {
                     let capacity = await this.getCapacityAttribute(controlPointId);
                     let ratio = this.calculateRatio(endpointValueModel.get(),Number(capacity.value));
                     let value = undefined;
-                    if(nodeCP.info.name.get().toLowerCase().includes("entree")) value = ratio;
-                    else{
+                    // if(nodeCP.info.name.get().toLowerCase().includes("entree")) value = ratio;
+                    // else{
                         if(ratio>=0 && ratio<=30) value="Peu fréquenté";
                         else if(ratio>30 && ratio<=55) value="Assez fréquenté";
                         else if(ratio>55 && ratio<=80) value="Très fréquenté";
                         else if(ratio>80) value="Saturé";
-                    }
+                    // }
 
                     await this.updateControlEndpoint(controlPointId,value, InputDataEndpointDataType.Real, InputDataEndpointType.Other)         
-                    console.log(nodeCP.info.name.get() + " updated ==> value = "+ value);
 
                 },true);
             }
@@ -201,7 +200,7 @@ export interface IAttendanceObj {
      * @param  {number} totalCapacity
      * @returns {number} 
      */
-    private calculateRatio(currentValue: number,totalCapacity:number): number{
+    public calculateRatio(currentValue: number,totalCapacity:number): number{
         let result = (currentValue/totalCapacity)*100;
         return Math.round(result*100)/100;
     }
@@ -216,7 +215,7 @@ export interface IAttendanceObj {
      * @param  {any} type - Type ( not really used )
      * @returns Promise
      */
-    private async updateControlEndpoint(targetId:string, valueToPush:any, dataType:any, type:any): Promise<void>{
+    public async updateControlEndpoint(targetId:string, valueToPush:any, dataType:any, type:any): Promise<void>{
         let node = SpinalGraphService.getRealNode(targetId);
         (<any>SpinalGraphService)._addNode(node)
         let target = SpinalGraphService.getInfo(targetId);
@@ -234,6 +233,8 @@ export interface IAttendanceObj {
             };
             const time = new Date();
             await networkService.updateEndpoint(target,input,time);
+            console.log(node.info.name.get() + " updated ==> value = "+ valueToPush);
+
         }
         else{
             console.log(valueToPush + " value to push in node : " + target.info.name.get() + " -- ABORTED !");

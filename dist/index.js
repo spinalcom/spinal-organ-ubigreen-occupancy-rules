@@ -86,6 +86,21 @@ class SpinalMain {
         console.log("** DONE ANALYSING ATTENDANCE **");
     }
     /**
+     * Calculates the bulding attendance ratio
+     * @returns Promise
+     */
+    async buldingAttendance() {
+        const contextName = constants.UBIGREEN_NETWORK.context;
+        const networkName = constants.UBIGREEN_NETWORK.network;
+        let ep = await utils_attendance.getUbigreenEndpoints(contextName, networkName);
+        let cp = await utils_attendance.getAttendanceControlPoint();
+        let nodeEP_entree = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(ep.ENTREE.id.get());
+        let endpointValue = (await nodeEP_entree.getElement(true)).currentValue.get();
+        let capacity = await utils_attendance.getCapacityAttribute(cp.ENTREE.id.get());
+        let ratio = utils_attendance.calculateRatio(endpointValue, Number(capacity.value));
+        await utils_attendance.updateControlEndpoint(cp.ENTREE.id.get(), ratio, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
+    }
+    /**
      * Analyse the occupancy of all working positions
      * @returns Promise
      */
@@ -125,9 +140,15 @@ async function Main() {
         const spinalMain = new SpinalMain();
         await spinalMain.init();
         await spinalMain.MainJob();
+        //Release working positions occupancy at a specific time
         cron.schedule(`0 ${spinalMain.stopTime} * * *`, async () => {
             console.log(`*** It's ${spinalMain.stopTime}h - Organ is stopped  ***`);
             await spinalMain.ReleaseJob();
+        });
+        //calculating building attendance every hour
+        cron.schedule(`0 * * * *`, async () => {
+            console.log(`*** Calculating building attendance  ***`);
+            await spinalMain.buldingAttendance();
         });
     }
     catch (error) {
