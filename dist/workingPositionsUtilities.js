@@ -134,7 +134,7 @@ class UtilsWorkingPositions {
             //bind le controlPoint aux endpoint
             endpointValueModel.bind(async () => {
                 let hour = new Date().getHours();
-                if (hour >= this.WORKING_HOURS["start"] || hour < this.WORKING_HOURS["end"]) {
+                if (hour >= this.WORKING_HOURS["start"] && hour < this.WORKING_HOURS["end"]) {
                     let controlPointValue = (await nodeCP.getElement(true)).currentValue.get();
                     await this.useCases(endpointId, endpointValueModel.get(), controlPointId, controlPointValue, workPositionName);
                 }
