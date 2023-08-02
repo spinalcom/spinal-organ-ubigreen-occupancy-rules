@@ -98,6 +98,7 @@ class SpinalMain {
 
         let ep = await utils_attendance.getUbigreenEndpoints(contextName,networkName);
         let cp = await utils_attendance.getAttendanceControlPoint();
+
         await utils_attendance.bindEndpointToControlpoint(cp,ep);
 
         console.log("** DONE ANALYSING ATTENDANCE **");
@@ -105,23 +106,16 @@ class SpinalMain {
 
 
     /**
-     * Calculates the bulding attendance ratio
+     * Calculates the occupation ratio
      * @returns Promise
      */
-    public async buldingAttendance(): Promise<void>{
+    public async buldingOccupation(): Promise<void>{
         const contextName = constants.UBIGREEN_NETWORK.context;
         const networkName = constants.UBIGREEN_NETWORK.network;
 
         let ep = await utils_attendance.getUbigreenEndpoints(contextName,networkName);
         let cp = await utils_attendance.getAttendanceControlPoint();
-
-        let nodeEP_entree = SpinalGraphService.getRealNode(ep.ENTREE.id.get());
-        let endpointValue = (await nodeEP_entree.getElement(true)).currentValue.get();
-
-        let capacity = await utils_attendance.getCapacityAttribute(cp.ENTREE.id.get());
-        let ratio = utils_attendance.calculateRatio(endpointValue,Number(capacity.value));
-
-        await utils_attendance.updateControlEndpoint(cp.ENTREE.id.get(),ratio, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
+        await utils_attendance.calculateOccupation(cp,ep);
     }
     
     
@@ -132,16 +126,29 @@ class SpinalMain {
     private async analysingWorkingPosition(): Promise<void>{
         const workPositionContextName = constants.WORKING_POSITION.context;
         const workPositionCategoryName = constants.WORKING_POSITION.category;
+        const RQTHworkPositionContextName = constants.EXCLUDE_WORKING_POSITION.context;
+        const RQTHworkPositionCategoryName = constants.EXCLUDE_WORKING_POSITION.category;
         console.log(" START ANALYSING WORKING POSITIONS ..... ");
 
         let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName,workPositionCategoryName);
+        let RQTHworkingPositions = await utils_workingPositions.getWorkPositions(RQTHworkPositionContextName,RQTHworkPositionCategoryName);
 
-        let promises = workingPositions.map(async (pos: SpinalNodeRef) =>{
-            let cp = await utils_workingPositions.getControlPoint(pos.id.get());
-            let ep = await utils_workingPositions.getOccupancyBmsEndpoint(pos);
+        let finalWP = {}
+        for(let elt of workingPositions){
+            if(elt != undefined) finalWP[elt.id.get()] = "ok";
+        } 
+        for(let exclude of RQTHworkingPositions){
+            if(exclude != undefined) delete finalWP[exclude.id.get()];
+        } 
+        let listWP = Object.keys(finalWP)
 
-            await utils_workingPositions.bindEndpointToControlpoint(cp,ep,pos.name.get());
-            await utils_workingPositions.bindControlpointToRelease(cp,ep,pos.name.get());
+        let promises = listWP.map(async (posId) =>{
+            let posNode = SpinalGraphService.getRealNode(posId);
+            let cp = await utils_workingPositions.getControlPoint(posId);
+            let ep = await utils_workingPositions.getOccupancyBmsEndpoint(posId);
+
+            await utils_workingPositions.bindEndpointToControlpoint(cp,ep,posNode);
+            await utils_workingPositions.bindControlpointToRelease(cp,ep,posNode);
 
         });
         await Promise.all(promises);
@@ -158,10 +165,22 @@ class SpinalMain {
     public async ReleaseJob(): Promise<void> {
         const workPositionContextName = constants.WORKING_POSITION.context;
         const workPositionCategoryName = constants.WORKING_POSITION.category;
+        const RQTHworkPositionContextName = constants.EXCLUDE_WORKING_POSITION.context;
+        const RQTHworkPositionCategoryName = constants.EXCLUDE_WORKING_POSITION.category;
 
         let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName,workPositionCategoryName);
-        let promises = workingPositions.map(async (pos: SpinalNodeRef) =>{
-            let cp = await utils_workingPositions.getControlPoint(pos.id.get());
+        let RQTHworkingPositions = await utils_workingPositions.getWorkPositions(RQTHworkPositionContextName,RQTHworkPositionCategoryName);
+
+        let finalWP = {}
+        for(let elt of workingPositions){
+            if(elt != undefined) finalWP[elt.id.get()] = "ok";
+        } 
+        for(let exclude of RQTHworkingPositions){
+            if(exclude != undefined) delete finalWP[exclude.id.get()];
+        } 
+        let listWP = Object.keys(finalWP)
+        let promises = listWP.map(async (posId: string) =>{
+            let cp = await utils_workingPositions.getControlPoint(posId);
             await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other)
 
         });
@@ -194,7 +213,7 @@ async function Main(): Promise<void> {
         //calculating building attendance every hour
         cron.schedule(`0 * * * *`, async (): Promise<void> => {
             console.log(`*** Calculating building attendance  ***`);
-            await spinalMain.buldingAttendance();
+            await spinalMain.buldingOccupation();
         });
     } 
     catch (error) {

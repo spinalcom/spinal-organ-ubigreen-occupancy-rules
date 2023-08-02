@@ -26,6 +26,9 @@ import {SpinalGraphService, SpinalNodeRef} from "spinal-env-viewer-graph-service
 import {SpinalNode} from "spinal-model-graph"
 import * as constants from "./constants"
 import { NetworkService, InputDataEndpoint, InputDataEndpointDataType, InputDataEndpointType }  from "spinal-model-bmsnetwork"
+import { attributeService, ICategory } from "spinal-env-viewer-plugin-documentation-service";
+import { SpinalAttribute } from "spinal-models-documentation/declarations";
+
 
 export const networkService = new NetworkService()
 
@@ -112,12 +115,11 @@ export const networkService = new NetworkService()
 
     /**
      * Returns the occupancy endpoint of a node
-     * @param  {SpinalNodeRef} workPositionModel - model of the node
+     * @param  {string} workPositionId - id of the node
      * @returns {Promise<SpinalNodeRef>} Promise
      */
-    public async getOccupancyBmsEndpoint(workPositionModel: SpinalNodeRef): Promise<SpinalNodeRef>{
-        if(workPositionModel!=undefined){
-            let bmsDevices = await SpinalGraphService.getChildren(workPositionModel.id.get(),["hasBmsDevice"]);
+    public async getOccupancyBmsEndpoint(workPositionId: string): Promise<SpinalNodeRef>{
+            let bmsDevices = await SpinalGraphService.getChildren(workPositionId,["hasBmsDevice"]);
             if(bmsDevices.length!=0){
                 for(let device of bmsDevices){
                     let bmsEndPoints = await SpinalGraphService.getChildren(device.id.get(),["hasBmsEndpoint"]);
@@ -128,7 +130,6 @@ export const networkService = new NetworkService()
                     } 
                 }
             }
-        }
         return undefined;
     }                  
  
@@ -142,7 +143,7 @@ export const networkService = new NetworkService()
      * @param  {string} workPositionName - BimObject name
      * @returns {void} Promise
      */
-    public async bindEndpointToControlpoint(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPositionName: string): Promise<void>{
+    public async bindEndpointToControlpoint(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPosition: SpinalNode): Promise<void>{
         if(controlPoint!=undefined && endpoint!=undefined){
             let endpointId = endpoint.id.get();
             let controlPointId = controlPoint.id.get();
@@ -156,7 +157,8 @@ export const networkService = new NetworkService()
                 let hour = new Date().getHours();
                 if(hour>=this.WORKING_HOURS["start"] && hour < this.WORKING_HOURS["end"]){
                     let controlPointValue = (await nodeCP.getElement(true)).currentValue.get();
-                    await this.useCases(endpointId,endpointValueModel.get(),controlPointId,controlPointValue,workPositionName)
+                    let userAttribute = await this._getUserAttribute(workPosition,"Identifiant","Utilisateur");
+                    await this.useCases(endpointId,endpointValueModel.get(),controlPointId,controlPointValue,workPosition.info.name.get(),userAttribute)
                 }
             },true);
         }
@@ -172,7 +174,7 @@ export const networkService = new NetworkService()
      * @param  {string} workPositionName - BimObject name
      * @returns {void} Promise
      */
-    public async bindControlpointToRelease(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPositionName: string): Promise<void>{
+    public async bindControlpointToRelease(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPosition: SpinalNode): Promise<void>{
         if(controlPoint!=undefined && endpoint!=undefined){
             let endpointId = endpoint.id.get();
             let controlPointId = controlPoint.id.get();
@@ -187,7 +189,8 @@ export const networkService = new NetworkService()
                 if(hour>=this.WORKING_HOURS["start"] || hour < this.WORKING_HOURS["end"]){
                     let endpointValue = (await nodeEP.getElement(true)).currentValue.get();
                     if(controlPointValueModel.get()=="2"){
-                        await this.useCasesRelease(endpointId,endpointValue,controlPointId,controlPointValueModel.get(),workPositionName)
+                        let userAttribute = await this._getUserAttribute(workPosition,"Identifiant","Utilisateur");
+                        await this.useCasesRelease(endpointId,endpointValue,controlPointId,controlPointValueModel.get(),workPosition.info.name.get(),userAttribute)
                     }
                 }
             },true);
@@ -205,18 +208,20 @@ export const networkService = new NetworkService()
      * @param  {string} workPositionName
      * @returns {void} Promise
      */
-    private async useCasesRelease(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string): Promise<void>{
+    private async useCasesRelease(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string, userAttribute: SpinalAttribute): Promise<void>{
         if(endpointValue=="0" && controlPointValue =="2"){
             await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
-            console.log("<< "+ workPositionName +" >> updated ==> value = " + endpointValue);
+            // console.log("<< "+ workPositionName +" >> updated ==> value = " + endpointValue);
+            console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+
         }
         else if(endpointValue=="1" && controlPointValue =="2"){
             let date = new Date().getTime();
             this.CONTROL_POINT_RELEASE[endpointId] = date;
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
             await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
-            await this.useCases(endpointId,endpointValue,controlPointId,controlPointValue,workPositionName)   
+            await this.useCases(endpointId,endpointValue,controlPointId,controlPointValue,workPositionName,userAttribute)   
         }
     }
 
@@ -231,13 +236,15 @@ export const networkService = new NetworkService()
      * @param  {string} workPositionName
      * @returns {void} Promise
      */
-    private async useCases(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string): Promise<void>{
+    private async useCases(endpointId: string,endpointValue: string,controlPointId: string,controlPointValue: string, workPositionName:string, userAttribute: SpinalAttribute): Promise<void>{
         // endpoint = 0 to 1
         if(endpointValue=="1" && controlPointValue =="0"){
             let date = new Date().getTime();
             this.ENDPOINTS_LAST_MODIFICATION[endpointId] = date;
             await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other); 
-            console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+            // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+            console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+
         }
 
         // endpoint = 1 to 0
@@ -248,7 +255,9 @@ export const networkService = new NetworkService()
                 if(interval<this.DEFAULT_INTERVAL_TIME){        //last value has less than 5 minutes
                     await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
                     delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
-                    console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+                    // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+                    console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+
                 }
 
             }
@@ -258,7 +267,9 @@ export const networkService = new NetworkService()
                 if(interval<this.DEFAULT_INTERVAL_TIME){        //last value has less than 5 minutes
                     await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
                     delete this.CONTROL_POINT_RELEASE[endpointId];
-                    console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+                    // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+                    console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+
                 }
             }
         }
@@ -279,6 +290,19 @@ export const networkService = new NetworkService()
    }
     
     
+    /**
+     * Function that search and return the targeted attribute. Creates it if it doesn't exist with a default value of null
+     * @param  {SpinalNode} endpointNode
+     * @returns Promise
+     */
+    public async _getUserAttribute(BimObjectNode: SpinalNode, attributeCategoryName: string | ICategory,attributeName: string): Promise<SpinalAttribute> {
+        const [attribute] = await attributeService.getAttributesByCategory(BimObjectNode, attributeCategoryName, attributeName)
+        if (attribute) return attribute;
+    
+        return undefined
+    }
+
+
 
     /**
      * Function that updates a control endpoint value 

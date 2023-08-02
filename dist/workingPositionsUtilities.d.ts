@@ -1,5 +1,8 @@
 import { SpinalNodeRef } from "spinal-env-viewer-graph-service";
+import { SpinalNode } from "spinal-model-graph";
 import { NetworkService } from "spinal-model-bmsnetwork";
+import { ICategory } from "spinal-env-viewer-plugin-documentation-service";
+import { SpinalAttribute } from "spinal-models-documentation/declarations";
 export declare const networkService: NetworkService;
 /**
  * @export
@@ -26,10 +29,10 @@ export declare class UtilsWorkingPositions {
     getControlPoint(workpositionId: string): Promise<SpinalNodeRef>;
     /**
      * Returns the occupancy endpoint of a node
-     * @param  {SpinalNodeRef} workPositionModel - model of the node
+     * @param  {string} workPositionId - id of the node
      * @returns {Promise<SpinalNodeRef>} Promise
      */
-    getOccupancyBmsEndpoint(workPositionModel: SpinalNodeRef): Promise<SpinalNodeRef>;
+    getOccupancyBmsEndpoint(workPositionId: string): Promise<SpinalNodeRef>;
     /**
      * Function that binds to the endpoints and update the control_endpoints after analysing the use cases of occupancy
      * The update is applied at the first run
@@ -38,7 +41,7 @@ export declare class UtilsWorkingPositions {
      * @param  {string} workPositionName - BimObject name
      * @returns {void} Promise
      */
-    bindEndpointToControlpoint(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPositionName: string): Promise<void>;
+    bindEndpointToControlpoint(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPosition: SpinalNode): Promise<void>;
     /**
      * Function that binds to the control_endpoints and reset their values if the user send a release order (value=2)
      * The update is applied at the first run
@@ -47,7 +50,7 @@ export declare class UtilsWorkingPositions {
      * @param  {string} workPositionName - BimObject name
      * @returns {void} Promise
      */
-    bindControlpointToRelease(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPositionName: string): Promise<void>;
+    bindControlpointToRelease(controlPoint: SpinalNodeRef, endpoint: SpinalNodeRef, workPosition: SpinalNode): Promise<void>;
     /**
      * Function that analyse the multiple use cases for releasing the occupancy of a working position
      * @param  {string} endpointId
@@ -75,6 +78,12 @@ export declare class UtilsWorkingPositions {
      * @returns number
      */
     private calculateIntervalTime;
+    /**
+     * Function that search and return the targeted attribute. Creates it if it doesn't exist with a default value of null
+     * @param  {SpinalNode} endpointNode
+     * @returns Promise
+     */
+    _getUserAttribute(BimObjectNode: SpinalNode, attributeCategoryName: string | ICategory, attributeName: string): Promise<SpinalAttribute>;
     /**
      * Function that updates a control endpoint value
      * @param  {string} targetId - Id of the Node to update

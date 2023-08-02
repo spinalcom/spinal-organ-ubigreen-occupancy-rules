@@ -2,6 +2,10 @@ export declare const WORKING_POSITION: Readonly<{
     context: "Contexte équipement capteur";
     category: "Ubigreen";
 }>;
+export declare const EXCLUDE_WORKING_POSITION: Readonly<{
+    context: "Contexte d'équipement intégration";
+    category: "Règle métier Ubigreen";
+}>;
 export declare const UBIGREEN_NETWORK: Readonly<{
     context: "Network Ubigreen production";
     network: "SmartFlow";

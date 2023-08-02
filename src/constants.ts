@@ -29,6 +29,12 @@ export const WORKING_POSITION = Object.freeze({
     category: "Ubigreen"
 });
 
+export const EXCLUDE_WORKING_POSITION = Object.freeze({
+    context: "Contexte d'équipement intégration",
+    category: "Règle métier Ubigreen"
+});
+
+
 export const UBIGREEN_NETWORK = Object.freeze({
     context: "Network Ubigreen production",
     network: "SmartFlow"

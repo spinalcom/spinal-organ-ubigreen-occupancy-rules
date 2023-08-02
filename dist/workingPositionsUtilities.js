@@ -27,6 +27,7 @@ exports.UtilsWorkingPositions = exports.networkService = void 0;
 const spinal_env_viewer_graph_service_1 = require("spinal-env-viewer-graph-service");
 const constants = require("./constants");
 const spinal_model_bmsnetwork_1 = require("spinal-model-bmsnetwork");
+const spinal_env_viewer_plugin_documentation_service_1 = require("spinal-env-viewer-plugin-documentation-service");
 exports.networkService = new spinal_model_bmsnetwork_1.NetworkService();
 /**
  * @export
@@ -96,20 +97,18 @@ class UtilsWorkingPositions {
     }
     /**
      * Returns the occupancy endpoint of a node
-     * @param  {SpinalNodeRef} workPositionModel - model of the node
+     * @param  {string} workPositionId - id of the node
      * @returns {Promise<SpinalNodeRef>} Promise
      */
-    async getOccupancyBmsEndpoint(workPositionModel) {
-        if (workPositionModel != undefined) {
-            let bmsDevices = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(workPositionModel.id.get(), ["hasBmsDevice"]);
-            if (bmsDevices.length != 0) {
-                for (let device of bmsDevices) {
-                    let bmsEndPoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
-                    if (bmsEndPoints.length != 0) {
-                        for (let bms of bmsEndPoints) {
-                            if (((bms.name.get()).toLowerCase()).includes("occupation"))
-                                return bms;
-                        }
+    async getOccupancyBmsEndpoint(workPositionId) {
+        let bmsDevices = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(workPositionId, ["hasBmsDevice"]);
+        if (bmsDevices.length != 0) {
+            for (let device of bmsDevices) {
+                let bmsEndPoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
+                if (bmsEndPoints.length != 0) {
+                    for (let bms of bmsEndPoints) {
+                        if (((bms.name.get()).toLowerCase()).includes("occupation"))
+                            return bms;
                     }
                 }
             }
@@ -124,7 +123,7 @@ class UtilsWorkingPositions {
      * @param  {string} workPositionName - BimObject name
      * @returns {void} Promise
      */
-    async bindEndpointToControlpoint(controlPoint, endpoint, workPositionName) {
+    async bindEndpointToControlpoint(controlPoint, endpoint, workPosition) {
         if (controlPoint != undefined && endpoint != undefined) {
             let endpointId = endpoint.id.get();
             let controlPointId = controlPoint.id.get();
@@ -136,7 +135,8 @@ class UtilsWorkingPositions {
                 let hour = new Date().getHours();
                 if (hour >= this.WORKING_HOURS["start"] && hour < this.WORKING_HOURS["end"]) {
                     let controlPointValue = (await nodeCP.getElement(true)).currentValue.get();
-                    await this.useCases(endpointId, endpointValueModel.get(), controlPointId, controlPointValue, workPositionName);
+                    let userAttribute = await this._getUserAttribute(workPosition, "Identifiant", "Utilisateur");
+                    await this.useCases(endpointId, endpointValueModel.get(), controlPointId, controlPointValue, workPosition.info.name.get(), userAttribute);
                 }
             }, true);
         }
@@ -149,7 +149,7 @@ class UtilsWorkingPositions {
      * @param  {string} workPositionName - BimObject name
      * @returns {void} Promise
      */
-    async bindControlpointToRelease(controlPoint, endpoint, workPositionName) {
+    async bindControlpointToRelease(controlPoint, endpoint, workPosition) {
         if (controlPoint != undefined && endpoint != undefined) {
             let endpointId = endpoint.id.get();
             let controlPointId = controlPoint.id.get();
@@ -162,7 +162,8 @@ class UtilsWorkingPositions {
                 if (hour >= this.WORKING_HOURS["start"] || hour < this.WORKING_HOURS["end"]) {
                     let endpointValue = (await nodeEP.getElement(true)).currentValue.get();
                     if (controlPointValueModel.get() == "2") {
-                        await this.useCasesRelease(endpointId, endpointValue, controlPointId, controlPointValueModel.get(), workPositionName);
+                        let userAttribute = await this._getUserAttribute(workPosition, "Identifiant", "Utilisateur");
+                        await this.useCasesRelease(endpointId, endpointValue, controlPointId, controlPointValueModel.get(), workPosition.info.name.get(), userAttribute);
                     }
                 }
             }, true);
@@ -177,18 +178,19 @@ class UtilsWorkingPositions {
      * @param  {string} workPositionName
      * @returns {void} Promise
      */
-    async useCasesRelease(endpointId, endpointValue, controlPointId, controlPointValue, workPositionName) {
+    async useCasesRelease(endpointId, endpointValue, controlPointId, controlPointValue, workPositionName, userAttribute) {
         if (endpointValue == "0" && controlPointValue == "2") {
             await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
-            console.log("<< " + workPositionName + " >> updated ==> value = " + endpointValue);
+            // console.log("<< "+ workPositionName +" >> updated ==> value = " + endpointValue);
+            console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
         }
         else if (endpointValue == "1" && controlPointValue == "2") {
             let date = new Date().getTime();
             this.CONTROL_POINT_RELEASE[endpointId] = date;
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
             await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
-            await this.useCases(endpointId, endpointValue, controlPointId, controlPointValue, workPositionName);
+            await this.useCases(endpointId, endpointValue, controlPointId, controlPointValue, workPositionName, userAttribute);
         }
     }
     /**
@@ -200,13 +202,14 @@ class UtilsWorkingPositions {
      * @param  {string} workPositionName
      * @returns {void} Promise
      */
-    async useCases(endpointId, endpointValue, controlPointId, controlPointValue, workPositionName) {
+    async useCases(endpointId, endpointValue, controlPointId, controlPointValue, workPositionName, userAttribute) {
         // endpoint = 0 to 1
         if (endpointValue == "1" && controlPointValue == "0") {
             let date = new Date().getTime();
             this.ENDPOINTS_LAST_MODIFICATION[endpointId] = date;
             await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
-            console.log("<< " + workPositionName + ">> updated ==> value = " + endpointValue);
+            // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+            console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
         }
         // endpoint = 1 to 0
         else if (endpointValue == "0" && controlPointValue == "1") {
@@ -216,7 +219,8 @@ class UtilsWorkingPositions {
                 if (interval < this.DEFAULT_INTERVAL_TIME) { //last value has less than 5 minutes
                     await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
                     delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
-                    console.log("<< " + workPositionName + ">> updated ==> value = " + endpointValue);
+                    // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+                    console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
                 }
             }
             // for release
@@ -225,7 +229,8 @@ class UtilsWorkingPositions {
                 if (interval < this.DEFAULT_INTERVAL_TIME) { //last value has less than 5 minutes
                     await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
                     delete this.CONTROL_POINT_RELEASE[endpointId];
-                    console.log("<< " + workPositionName + ">> updated ==> value = " + endpointValue);
+                    // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
+                    console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
                 }
             }
         }
@@ -240,6 +245,17 @@ class UtilsWorkingPositions {
         let interval = newDate - lastDate; //ms
         // let minutes = interval / 60000;     //min
         return interval;
+    }
+    /**
+     * Function that search and return the targeted attribute. Creates it if it doesn't exist with a default value of null
+     * @param  {SpinalNode} endpointNode
+     * @returns Promise
+     */
+    async _getUserAttribute(BimObjectNode, attributeCategoryName, attributeName) {
+        const [attribute] = await spinal_env_viewer_plugin_documentation_service_1.attributeService.getAttributesByCategory(BimObjectNode, attributeCategoryName, attributeName);
+        if (attribute)
+            return attribute;
+        return undefined;
     }
     /**
      * Function that updates a control endpoint value

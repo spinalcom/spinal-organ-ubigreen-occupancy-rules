@@ -31,13 +31,21 @@ import { attributeService } from "spinal-env-viewer-plugin-documentation-service
 
 export const networkService = new NetworkService()
 
-export interface IAttendanceObj {
+export interface IBmsEndPointsObj {
     CAFET: SpinalNodeRef,
     RIE: SpinalNodeRef,
-    ENTREE: SpinalNodeRef
+    BUILDING: SpinalNodeRef,
+    AUDITORIUM: SpinalNodeRef
 }
 
-
+export interface IControlPointsObj {
+    AFFLU_CAFET: SpinalNodeRef,
+    AFFLU_RIE: SpinalNodeRef,
+    OCCUP_BUILDING : SpinalNodeRef,
+    OCCUP_CAFET : SpinalNodeRef,
+    OCCUP_RIE : SpinalNodeRef,
+    OCCUP_AUDITORIUM: SpinalNodeRef
+}
 
 /**
  * @export
@@ -47,16 +55,17 @@ export interface IAttendanceObj {
   
 
     /**
-     * Returns a promise of IAttendanceObj with the model of the right endpoints
+     * Returns a promise of IBmsEndPointsObj with the model of the right endpoints
      * @param  {string} contextName
      * @param  {string} networkName
-     * @returns {Promise<IAttendanceObj>} Promise
+     * @returns {Promise<IBmsEndPointsObj>} Promise
      */
-    public async getUbigreenEndpoints(contextName: string,networkName: string ): Promise<IAttendanceObj>{
-        let bmsEndPointsObj: IAttendanceObj = {   
+    public async getUbigreenEndpoints(contextName: string,networkName: string ): Promise<IBmsEndPointsObj>{
+        let bmsEndPointsObj: IBmsEndPointsObj = {   
             CAFET: undefined,
             RIE: undefined,
-            ENTREE: undefined
+            BUILDING: undefined,
+            AUDITORIUM: undefined
         };
 
         let networkContext = (SpinalGraphService.getContext(contextName));
@@ -83,7 +92,11 @@ export interface IAttendanceObj {
                     }    
                     else if((device.name.get().toLowerCase()).includes("entree")){
                         let [bmsEndPoint] = await SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
-                        bmsEndPointsObj.ENTREE=(bmsEndPoint);
+                        bmsEndPointsObj.BUILDING=(bmsEndPoint);
+                    }
+                    else if((device.name.get().toLowerCase()).includes("auditorium")){
+                        let [bmsEndPoint] = await SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
+                        bmsEndPointsObj.AUDITORIUM=(bmsEndPoint);
                     }   
                 }
                 return bmsEndPointsObj;
@@ -95,17 +108,20 @@ export interface IAttendanceObj {
 
 
     /**
-     * Returns a promise of IAttendanceObj with the model of the right control_endpoints
+     * Returns a promise of IControlPointsObj with the model of the right control_endpoints
      * @param  {string} id of the node
-     * @returns {Promise<IAttendanceObj>} Promise
+     * @returns {Promise<IControlPointsObj>} Promise
      */
-    private async getControlPoints(id: string): Promise<IAttendanceObj>{
+    private async getControlPoints(id: string): Promise<IControlPointsObj>{
         const NODE_TO_CONTROL_POINTS_RELATION = "hasControlPoints";
         const CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION = "hasBmsEndpoint";
-        let bmsEndPointsObj: IAttendanceObj = {   
-            CAFET: undefined,
-            RIE: undefined,
-            ENTREE : undefined
+        let controlPointsObj: IControlPointsObj = {   
+            AFFLU_CAFET: undefined,
+            AFFLU_RIE: undefined,
+            OCCUP_BUILDING : undefined,
+            OCCUP_CAFET : undefined,
+            OCCUP_RIE : undefined,
+            OCCUP_AUDITORIUM: undefined
         };
 
         let allControlPoints = await SpinalGraphService.getChildren(id, [NODE_TO_CONTROL_POINTS_RELATION]);
@@ -114,11 +130,14 @@ export interface IAttendanceObj {
                 let allBmsEndpoints = await SpinalGraphService.getChildren(controlPoint.id.get(), [CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION]);
                 if(allBmsEndpoints.length!=0){
                     for (let bmsEndPoint of allBmsEndpoints) {
-                        if(bmsEndPoint.name.get().toLowerCase().includes("rie"))  bmsEndPointsObj.RIE=(bmsEndPoint);
-                        else if(bmsEndPoint.name.get().toLowerCase().includes("cafet"))  bmsEndPointsObj.CAFET=(bmsEndPoint);
-                        else if(bmsEndPoint.name.get().toLowerCase().includes("entree"))  bmsEndPointsObj.ENTREE=(bmsEndPoint);
+                        if(bmsEndPoint.name.get().toLowerCase().includes("_rie"))  controlPointsObj.AFFLU_RIE=(bmsEndPoint);
+                        else if(bmsEndPoint.name.get().toLowerCase().includes("_cafet"))  controlPointsObj.AFFLU_CAFET=(bmsEndPoint);
+                        else if(bmsEndPoint.name.get().toLowerCase().includes("bâtiment"))  controlPointsObj.OCCUP_BUILDING=(bmsEndPoint);
+                        else if(bmsEndPoint.name.get().toLowerCase().includes(" cafétéria"))  controlPointsObj.OCCUP_CAFET=(bmsEndPoint);
+                        else if(bmsEndPoint.name.get().toLowerCase().includes(" rie"))  controlPointsObj.OCCUP_RIE=(bmsEndPoint);
+                        else if(bmsEndPoint.name.get().toLowerCase().includes("auditorium"))  controlPointsObj.OCCUP_AUDITORIUM=(bmsEndPoint);
                     }
-                    return bmsEndPointsObj;
+                    return controlPointsObj;
                 }  
             }
         }
@@ -128,10 +147,10 @@ export interface IAttendanceObj {
 
 
     /**
-     * Returns a promise of IAttendanceObj with the model of the right control_endpoints for the building node
-     * @returns {Promise<IAttendanceObj>} Promise
+     * Returns a promise of IControlPointsObj with the model of the right control_endpoints for the building node
+     * @returns {Promise<IControlPointsObj>} Promise
      */
-    public async getAttendanceControlPoint(): Promise<IAttendanceObj>{
+    public async getAttendanceControlPoint(): Promise<IControlPointsObj>{
         let spatialContext = (SpinalGraphService.getContextWithType("geographicContext"))[0];
         let spatialId = spatialContext.info.id.get();
         let [building] = await SpinalGraphService.getChildren(spatialId,['hasGeographicBuilding'])
@@ -158,19 +177,19 @@ export interface IAttendanceObj {
     /**
      * Function that binds to the endpoints and update the control_endpoints with the right value of attendance ratio
      * The update is applied at the first run
-     * @param  {IAttendanceObj} controlPointObj
-     * @param  {IAttendanceObj} endpointObj
+     * @param  {IControlPointsObj} controlPointObj
+     * @param  {IBmsEndPointsObj} endpointObj
      * @returns {void} Promise
      */
-    public async bindEndpointToControlpoint(controlPointObj: IAttendanceObj, endpointObj: IAttendanceObj): Promise<void>{
+    public async bindEndpointToControlpoint(controlPointObj: IControlPointsObj, endpointObj: IBmsEndPointsObj): Promise<void>{ 
         for(let x in endpointObj){
-            if(endpointObj[x]!=undefined && x!="ENTREE"){
+            if(endpointObj[x]!=undefined && !((x=="BUILDING") || (x=="AUDITORIUM"))){
                 let endpointId = endpointObj[x].id.get();
                 let nodeEP = SpinalGraphService.getRealNode(endpointId);
                 let endpointValueModel = (await nodeEP.getElement(true)).currentValue;
 
-                let controlPointId = controlPointObj[x].id.get();
-                let nodeCP = SpinalGraphService.getRealNode(controlPointId);
+                let controlPointId = controlPointObj["AFFLU_"+x].id.get();
+                // let nodeCP = SpinalGraphService.getRealNode(controlPointId);
 
                 //bind le controlPoint aux endpoint
                 endpointValueModel.bind(async () =>{
@@ -206,6 +225,26 @@ export interface IAttendanceObj {
     }
 
 
+ 
+    /**
+     * @param  {IControlPointsObj} controlPointObj
+     * @param  {IBmsEndPointsObj} endpointObj
+     * @returns Promise
+     */
+    public async calculateOccupation(controlPointObj: IControlPointsObj, endpointObj: IBmsEndPointsObj): Promise<void>{
+        for(let x in endpointObj){
+            if(endpointObj[x]!=undefined){
+                let nodeEP = SpinalGraphService.getRealNode(endpointObj[x].id.get());
+                let endpointValue = (await nodeEP.getElement(true)).currentValue.get();
+                
+                let controlPointId = controlPointObj["OCCUP_"+x].id.get();
+                let capacity = await this.getCapacityAttribute(controlPointId);
+                let ratio = this.calculateRatio(endpointValue,Number(capacity.value));
+                await this.updateControlEndpoint(controlPointId,ratio, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
+            }
+        }
+    }
+    
 
     /**
      * Function that updates a control endpoint value 

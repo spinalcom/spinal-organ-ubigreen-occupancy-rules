@@ -23,10 +23,14 @@
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WORKING_HOURS = exports.INTERVAL_TIME = exports.CAPACITY_ATTRIBUTE = exports.UBIGREEN_NETWORK = exports.WORKING_POSITION = void 0;
+exports.WORKING_HOURS = exports.INTERVAL_TIME = exports.CAPACITY_ATTRIBUTE = exports.UBIGREEN_NETWORK = exports.EXCLUDE_WORKING_POSITION = exports.WORKING_POSITION = void 0;
 exports.WORKING_POSITION = Object.freeze({
     context: "Contexte équipement capteur",
     category: "Ubigreen"
+});
+exports.EXCLUDE_WORKING_POSITION = Object.freeze({
+    context: "Contexte d'équipement intégration",
+    category: "Règle métier Ubigreen"
 });
 exports.UBIGREEN_NETWORK = Object.freeze({
     context: "Network Ubigreen production",

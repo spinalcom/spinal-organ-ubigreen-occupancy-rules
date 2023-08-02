@@ -35,16 +35,17 @@ exports.networkService = new spinal_model_bmsnetwork_1.NetworkService();
  */
 class UtilsAttendance {
     /**
-     * Returns a promise of IAttendanceObj with the model of the right endpoints
+     * Returns a promise of IBmsEndPointsObj with the model of the right endpoints
      * @param  {string} contextName
      * @param  {string} networkName
-     * @returns {Promise<IAttendanceObj>} Promise
+     * @returns {Promise<IBmsEndPointsObj>} Promise
      */
     async getUbigreenEndpoints(contextName, networkName) {
         let bmsEndPointsObj = {
             CAFET: undefined,
             RIE: undefined,
-            ENTREE: undefined
+            BUILDING: undefined,
+            AUDITORIUM: undefined
         };
         let networkContext = (spinal_env_viewer_graph_service_1.SpinalGraphService.getContext(contextName));
         let contextId = networkContext.info.id.get();
@@ -69,7 +70,11 @@ class UtilsAttendance {
                     }
                     else if ((device.name.get().toLowerCase()).includes("entree")) {
                         let [bmsEndPoint] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
-                        bmsEndPointsObj.ENTREE = (bmsEndPoint);
+                        bmsEndPointsObj.BUILDING = (bmsEndPoint);
+                    }
+                    else if ((device.name.get().toLowerCase()).includes("auditorium")) {
+                        let [bmsEndPoint] = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
+                        bmsEndPointsObj.AUDITORIUM = (bmsEndPoint);
                     }
                 }
                 return bmsEndPointsObj;
@@ -78,17 +83,20 @@ class UtilsAttendance {
         return undefined;
     }
     /**
-     * Returns a promise of IAttendanceObj with the model of the right control_endpoints
+     * Returns a promise of IControlPointsObj with the model of the right control_endpoints
      * @param  {string} id of the node
-     * @returns {Promise<IAttendanceObj>} Promise
+     * @returns {Promise<IControlPointsObj>} Promise
      */
     async getControlPoints(id) {
         const NODE_TO_CONTROL_POINTS_RELATION = "hasControlPoints";
         const CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION = "hasBmsEndpoint";
-        let bmsEndPointsObj = {
-            CAFET: undefined,
-            RIE: undefined,
-            ENTREE: undefined
+        let controlPointsObj = {
+            AFFLU_CAFET: undefined,
+            AFFLU_RIE: undefined,
+            OCCUP_BUILDING: undefined,
+            OCCUP_CAFET: undefined,
+            OCCUP_RIE: undefined,
+            OCCUP_AUDITORIUM: undefined
         };
         let allControlPoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(id, [NODE_TO_CONTROL_POINTS_RELATION]);
         if (allControlPoints.length != 0) {
@@ -96,22 +104,28 @@ class UtilsAttendance {
                 let allBmsEndpoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(controlPoint.id.get(), [CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION]);
                 if (allBmsEndpoints.length != 0) {
                     for (let bmsEndPoint of allBmsEndpoints) {
-                        if (bmsEndPoint.name.get().toLowerCase().includes("rie"))
-                            bmsEndPointsObj.RIE = (bmsEndPoint);
-                        else if (bmsEndPoint.name.get().toLowerCase().includes("cafet"))
-                            bmsEndPointsObj.CAFET = (bmsEndPoint);
-                        else if (bmsEndPoint.name.get().toLowerCase().includes("entree"))
-                            bmsEndPointsObj.ENTREE = (bmsEndPoint);
+                        if (bmsEndPoint.name.get().toLowerCase().includes("_rie"))
+                            controlPointsObj.AFFLU_RIE = (bmsEndPoint);
+                        else if (bmsEndPoint.name.get().toLowerCase().includes("_cafet"))
+                            controlPointsObj.AFFLU_CAFET = (bmsEndPoint);
+                        else if (bmsEndPoint.name.get().toLowerCase().includes("bâtiment"))
+                            controlPointsObj.OCCUP_BUILDING = (bmsEndPoint);
+                        else if (bmsEndPoint.name.get().toLowerCase().includes(" cafétéria"))
+                            controlPointsObj.OCCUP_CAFET = (bmsEndPoint);
+                        else if (bmsEndPoint.name.get().toLowerCase().includes(" rie"))
+                            controlPointsObj.OCCUP_RIE = (bmsEndPoint);
+                        else if (bmsEndPoint.name.get().toLowerCase().includes("auditorium"))
+                            controlPointsObj.OCCUP_AUDITORIUM = (bmsEndPoint);
                     }
-                    return bmsEndPointsObj;
+                    return controlPointsObj;
                 }
             }
         }
         return undefined;
     }
     /**
-     * Returns a promise of IAttendanceObj with the model of the right control_endpoints for the building node
-     * @returns {Promise<IAttendanceObj>} Promise
+     * Returns a promise of IControlPointsObj with the model of the right control_endpoints for the building node
+     * @returns {Promise<IControlPointsObj>} Promise
      */
     async getAttendanceControlPoint() {
         let spatialContext = (spinal_env_viewer_graph_service_1.SpinalGraphService.getContextWithType("geographicContext"))[0];
@@ -134,18 +148,18 @@ class UtilsAttendance {
     /**
      * Function that binds to the endpoints and update the control_endpoints with the right value of attendance ratio
      * The update is applied at the first run
-     * @param  {IAttendanceObj} controlPointObj
-     * @param  {IAttendanceObj} endpointObj
+     * @param  {IControlPointsObj} controlPointObj
+     * @param  {IBmsEndPointsObj} endpointObj
      * @returns {void} Promise
      */
     async bindEndpointToControlpoint(controlPointObj, endpointObj) {
         for (let x in endpointObj) {
-            if (endpointObj[x] != undefined && x != "ENTREE") {
+            if (endpointObj[x] != undefined && !((x == "BUILDING") || (x == "AUDITORIUM"))) {
                 let endpointId = endpointObj[x].id.get();
                 let nodeEP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(endpointId);
                 let endpointValueModel = (await nodeEP.getElement(true)).currentValue;
-                let controlPointId = controlPointObj[x].id.get();
-                let nodeCP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(controlPointId);
+                let controlPointId = controlPointObj["AFFLU_" + x].id.get();
+                // let nodeCP = SpinalGraphService.getRealNode(controlPointId);
                 //bind le controlPoint aux endpoint
                 endpointValueModel.bind(async () => {
                     let capacity = await this.getCapacityAttribute(controlPointId);
@@ -176,6 +190,23 @@ class UtilsAttendance {
     calculateRatio(currentValue, totalCapacity) {
         let result = (currentValue / totalCapacity) * 100;
         return Math.round(result * 100) / 100;
+    }
+    /**
+     * @param  {IControlPointsObj} controlPointObj
+     * @param  {IBmsEndPointsObj} endpointObj
+     * @returns Promise
+     */
+    async calculateOccupation(controlPointObj, endpointObj) {
+        for (let x in endpointObj) {
+            if (endpointObj[x] != undefined) {
+                let nodeEP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(endpointObj[x].id.get());
+                let endpointValue = (await nodeEP.getElement(true)).currentValue.get();
+                let controlPointId = controlPointObj["OCCUP_" + x].id.get();
+                let capacity = await this.getCapacityAttribute(controlPointId);
+                let ratio = this.calculateRatio(endpointValue, Number(capacity.value));
+                await this.updateControlEndpoint(controlPointId, ratio, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
+            }
+        }
     }
     /**
      * Function that updates a control endpoint value
