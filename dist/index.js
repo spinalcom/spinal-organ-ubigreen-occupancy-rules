@@ -95,6 +95,7 @@ class SpinalMain {
         let ep = await utils_attendance.getUbigreenEndpoints(contextName, networkName);
         let cp = await utils_attendance.getAttendanceControlPoint();
         await utils_attendance.calculateOccupation(cp, ep);
+        console.log("** DONE calculating building occupation indicators **");
     }
     /**
      * Analyse the occupancy of all working positions
@@ -168,9 +169,9 @@ async function Main() {
             console.log(`*** It's ${spinalMain.stopTime}h - Organ is stopped  ***`);
             await spinalMain.ReleaseJob();
         });
-        //calculating building attendance every hour
+        //calculating building occupation indicators every hour
         cron.schedule(`0 * * * *`, async () => {
-            console.log(`*** Calculating building attendance  ***`);
+            console.log(`*** Calculating building occupation indicators ***`);
             await spinalMain.buldingOccupation();
         });
     }

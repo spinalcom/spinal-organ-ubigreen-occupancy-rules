@@ -116,6 +116,7 @@ class SpinalMain {
         let ep = await utils_attendance.getUbigreenEndpoints(contextName,networkName);
         let cp = await utils_attendance.getAttendanceControlPoint();
         await utils_attendance.calculateOccupation(cp,ep);
+        console.log("** DONE calculating building occupation indicators **");
     }
     
     
@@ -210,9 +211,9 @@ async function Main(): Promise<void> {
             await spinalMain.ReleaseJob();
         });
 
-        //calculating building attendance every hour
+        //calculating building occupation indicators every hour
         cron.schedule(`0 * * * *`, async (): Promise<void> => {
-            console.log(`*** Calculating building attendance  ***`);
+            console.log(`*** Calculating building occupation indicators ***`);
             await spinalMain.buldingOccupation();
         });
     } 
