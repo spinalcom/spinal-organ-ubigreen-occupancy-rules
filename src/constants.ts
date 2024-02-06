@@ -44,5 +44,6 @@ export const CAPACITY_ATTRIBUTE = "capacity";
 export const INTERVAL_TIME = 300000; //ms
 export const WORKING_HOURS = Object.freeze({
     start: 7,
+    mid: 14,
     end: 19
 });

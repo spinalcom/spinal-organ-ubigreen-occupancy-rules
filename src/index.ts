@@ -46,12 +46,14 @@ FileSystem.onConnectionError = (error_code: number) => {
 
 class SpinalMain {
 
-    stopTime : Number;
+    // stopTime : Number;
+    WORKING_HOURS : Object;
     connect: spinal.FileSystem;
     constructor() { 
         const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
         this.connect = spinalCore.connect(url);
-        this.stopTime = constants.WORKING_HOURS.end;
+        // this.stopTime = constants.WORKING_HOURS.end;
+        this.WORKING_HOURS = constants.WORKING_HOURS;
     }
     
 
@@ -82,7 +84,7 @@ class SpinalMain {
      */
     public async MainJob(): Promise<void> {
         await this.analysingWorkingPosition();
-        await this.analysingAttendance();
+        // await this.analysingAttendance();
     }
    
 
@@ -132,6 +134,7 @@ class SpinalMain {
         console.log(" START ANALYSING WORKING POSITIONS ..... ");
 
         let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName,workPositionCategoryName);
+        console.log(workingPositions)
         let RQTHworkingPositions = await utils_workingPositions.getWorkPositions(RQTHworkPositionContextName,RQTHworkPositionCategoryName);
 
         let finalWP = {}
@@ -159,11 +162,48 @@ class SpinalMain {
 
 
 
+        /**
+     * Analyse the occupancy of all working positions
+     * @returns Promise
+     */
+        public async ReleaseUnoccupiedPositions(): Promise<void>{
+            const workPositionContextName = constants.WORKING_POSITION.context;
+            const workPositionCategoryName = constants.WORKING_POSITION.category;
+            const RQTHworkPositionContextName = constants.EXCLUDE_WORKING_POSITION.context;
+            const RQTHworkPositionCategoryName = constants.EXCLUDE_WORKING_POSITION.category;
+    
+            let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName,workPositionCategoryName);
+            let RQTHworkingPositions = await utils_workingPositions.getWorkPositions(RQTHworkPositionContextName,RQTHworkPositionCategoryName);
+    
+            let finalWP = {}
+            for(let elt of workingPositions){
+                if(elt != undefined) finalWP[elt.id.get()] = "ok";
+            } 
+            for(let exclude of RQTHworkingPositions){
+                if(exclude != undefined) delete finalWP[exclude.id.get()];
+            } 
+            let listWP = Object.keys(finalWP)
+    
+            let promises = listWP.map(async (posId) =>{
+                let cp = await utils_workingPositions.getControlPoint(posId);
+                let ep = await utils_workingPositions.getOccupancyBmsEndpoint(posId);
+    
+                let nodeEP = SpinalGraphService.getRealNode(ep.id.get());
+                let endpointValue = (await nodeEP.getElement(true)).currentValue.get()
+                if(endpointValue==0) await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other);
+    
+            });
+            await Promise.all(promises);
+    
+            console.log("** DONE RESETING UNOCCUPIED WORKING POSITIONS **");
+        }
+
+
     /**
      * Reset all working positions at 19h
      * @returns Promise
      */
-    public async ReleaseJob(): Promise<void> {
+    public async ReleaseAllPositions(): Promise<void> {
         const workPositionContextName = constants.WORKING_POSITION.context;
         const workPositionCategoryName = constants.WORKING_POSITION.category;
         const RQTHworkPositionContextName = constants.EXCLUDE_WORKING_POSITION.context;
@@ -205,10 +245,16 @@ async function Main(): Promise<void> {
         await spinalMain.init();
         await spinalMain.MainJob();
 
-        //Release working positions occupancy at a specific time
-        cron.schedule(`0 ${spinalMain.stopTime} * * *`, async (): Promise<void> => {
-            console.log(`*** It's ${spinalMain.stopTime}h - Organ is stopped  ***`);
-            await spinalMain.ReleaseJob();
+        //Release unoccupied working positions occupancy at a specific time
+        cron.schedule(`0 ${spinalMain.WORKING_HOURS["mid"]} * * *`, async (): Promise<void> => {
+            console.log(`*** It's ${spinalMain.WORKING_HOURS["mid"]}h - Releasing unoccupied working positions ***`);
+            await spinalMain.ReleaseUnoccupiedPositions();
+        });
+
+        //Release all working positions occupancy at the end of the day
+        cron.schedule(`0 ${spinalMain.WORKING_HOURS["end"]} * * *`, async (): Promise<void> => {
+            console.log(`*** It's ${spinalMain.WORKING_HOURS["end"]}h - Organ is stopped  ***`);
+            await spinalMain.ReleaseAllPositions();
         });
 
         //calculating building occupation indicators every hour

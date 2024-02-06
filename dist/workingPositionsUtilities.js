@@ -63,7 +63,7 @@ class UtilsWorkingPositions {
         });
         //get bimObjects
         let workPositions = await spinal_env_viewer_graph_service_1.SpinalGraphService.findInContext(category.id.get(), context.info.id.get(), (elt) => {
-            if (elt.info.type.get() == "BIMObject") {
+            if (elt.info.type.get() == "BIMObject" && (elt.info.name.get()).includes('Furniture_Office-Chairs')) {
                 spinal_env_viewer_graph_service_1.SpinalGraphService._addNode(elt);
                 return true;
             }

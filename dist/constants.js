@@ -40,6 +40,7 @@ exports.CAPACITY_ATTRIBUTE = "capacity";
 exports.INTERVAL_TIME = 300000; //ms
 exports.WORKING_HOURS = Object.freeze({
     start: 7,
+    mid: 14,
     end: 19
 });
 //# sourceMappingURL=constants.js.map

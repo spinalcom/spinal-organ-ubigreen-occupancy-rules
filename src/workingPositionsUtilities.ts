@@ -75,7 +75,7 @@ export const networkService = new NetworkService()
         });
         //get bimObjects
         let workPositions = await SpinalGraphService.findInContext(category.id.get(), context.info.id.get(), (elt:SpinalNode<any>) => {
-            if(elt.info.type.get() == "BIMObject"){
+            if(elt.info.type.get() == "BIMObject" && (elt.info.name.get()).includes('Furniture_Office-Chairs')){
                 (<any>SpinalGraphService)._addNode(elt);
                 return true;
             }
