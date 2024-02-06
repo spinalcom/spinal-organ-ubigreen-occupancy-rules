@@ -71,7 +71,7 @@ class SpinalMain {
      */
     async MainJob() {
         await this.analysingWorkingPosition();
-        // await this.analysingAttendance();
+        await this.analysingAttendance();
     }
     /**
      * Calculates the attendance ratio
@@ -109,7 +109,6 @@ class SpinalMain {
         const RQTHworkPositionCategoryName = constants.EXCLUDE_WORKING_POSITION.category;
         console.log(" START ANALYSING WORKING POSITIONS ..... ");
         let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName, workPositionCategoryName);
-        console.log(workingPositions);
         let RQTHworkingPositions = await utils_workingPositions.getWorkPositions(RQTHworkPositionContextName, RQTHworkPositionCategoryName);
         let finalWP = {};
         for (let elt of workingPositions) {

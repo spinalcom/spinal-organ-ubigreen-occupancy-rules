@@ -84,7 +84,7 @@ class SpinalMain {
      */
     public async MainJob(): Promise<void> {
         await this.analysingWorkingPosition();
-        // await this.analysingAttendance();
+        await this.analysingAttendance();
     }
    
 
@@ -134,7 +134,6 @@ class SpinalMain {
         console.log(" START ANALYSING WORKING POSITIONS ..... ");
 
         let workingPositions = await utils_workingPositions.getWorkPositions(workPositionContextName,workPositionCategoryName);
-        console.log(workingPositions)
         let RQTHworkingPositions = await utils_workingPositions.getWorkPositions(RQTHworkPositionContextName,RQTHworkPositionCategoryName);
 
         let finalWP = {}
