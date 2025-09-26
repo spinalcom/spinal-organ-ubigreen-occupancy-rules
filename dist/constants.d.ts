@@ -11,7 +11,7 @@ export declare const UBIGREEN_NETWORK: Readonly<{
     network: "SmartFlow";
 }>;
 export declare const CAPACITY_ATTRIBUTE = "capacity";
-export declare const INTERVAL_TIME = 300000;
+export declare const INTERVAL_TIME = 900000;
 export declare const WORKING_HOURS: Readonly<{
     start: 7;
     mid: 14;

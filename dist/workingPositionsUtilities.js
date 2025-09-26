@@ -183,7 +183,7 @@ class UtilsWorkingPositions {
             await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
             // console.log("<< "+ workPositionName +" >> updated ==> value = " + endpointValue);
-            console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+            console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> released ==> value = ${endpointValue}`);
         }
         else if (endpointValue == "1" && controlPointValue == "2") {
             let date = new Date().getTime();
@@ -230,7 +230,7 @@ class UtilsWorkingPositions {
                     await this.updateControlEndpoint(controlPointId, endpointValue, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
                     delete this.CONTROL_POINT_RELEASE[endpointId];
                     // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
-                    console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+                    console.log(`<< ${workPositionName} || ${userAttribute == undefined ? "unkonwn" : userAttribute.value.get()} >> released ==> value = ${endpointValue}`);
                 }
             }
         }

@@ -213,7 +213,7 @@ export const networkService = new NetworkService()
             await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
             delete this.ENDPOINTS_LAST_MODIFICATION[endpointId];
             // console.log("<< "+ workPositionName +" >> updated ==> value = " + endpointValue);
-            console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+            console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> released ==> value = ${endpointValue}`);
 
         }
         else if(endpointValue=="1" && controlPointValue =="2"){
@@ -268,7 +268,7 @@ export const networkService = new NetworkService()
                     await this.updateControlEndpoint(controlPointId, endpointValue, InputDataEndpointDataType.Real, InputDataEndpointType.Other);
                     delete this.CONTROL_POINT_RELEASE[endpointId];
                     // console.log("<< "+ workPositionName +">> updated ==> value = " + endpointValue);
-                    console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> updated ==> value = ${endpointValue}`);
+                    console.log(`<< ${workPositionName} || ${userAttribute== undefined? "unkonwn" : userAttribute.value.get()} >> released ==> value = ${endpointValue}`);
 
                 }
             }

@@ -37,7 +37,7 @@ exports.UBIGREEN_NETWORK = Object.freeze({
     network: "SmartFlow"
 });
 exports.CAPACITY_ATTRIBUTE = "capacity";
-exports.INTERVAL_TIME = 300000; //ms
+exports.INTERVAL_TIME = 900000; //ms
 exports.WORKING_HOURS = Object.freeze({
     start: 7,
     mid: 14,

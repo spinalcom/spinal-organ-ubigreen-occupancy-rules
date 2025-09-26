@@ -28,7 +28,7 @@ const spinal_core_connectorjs_type_1 = require("spinal-core-connectorjs_type");
 const spinal_model_bmsnetwork_1 = require("spinal-model-bmsnetwork");
 const cron = require("node-cron");
 const config = require("../config");
-const ConfigFile_js_1 = require("../node_modules/spinal-lib-organ-monitoring/dist/classes/ConfigFile.js");
+const spinal_lib_organ_monitoring_1 = require("spinal-lib-organ-monitoring");
 const constants = require("./constants");
 const workingPositionsUtilities_1 = require("./workingPositionsUtilities");
 const attendanceUtilities_1 = require("./attendanceUtilities");
@@ -43,7 +43,7 @@ spinal_core_connectorjs_type_1.FileSystem.onConnectionError = (error_code) => {
 };
 class SpinalMain {
     constructor() {
-        const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
+        const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}/`;
         this.connect = spinal_core_connectorjs_type_1.spinalCore.connect(url);
         // this.stopTime = constants.WORKING_HOURS.end;
         this.WORKING_HOURS = constants.WORKING_HOURS;
@@ -58,7 +58,7 @@ class SpinalMain {
             spinal_core_connectorjs_type_1.spinalCore.load(this.connect, config.digitalTwinPath, async (graph) => {
                 await spinal_env_viewer_graph_service_1.SpinalGraphService.setGraph(graph);
                 console.log("Connected to the hub");
-                ConfigFile_js_1.default.init(this.connect, process.env.ORGAN_NAME + "-config", process.env.HUB_HOST, process.env.HUB_PROTOCOL, parseInt(process.env.HUB_PORT));
+                spinal_lib_organ_monitoring_1.default.init(this.connect, process.env.ORGAN_NAME, process.env.ORGAN_TYPE, process.env.HUB_HOST, parseInt(process.env.HUB_PORT));
                 resolve(graph);
             }, () => {
                 reject();
