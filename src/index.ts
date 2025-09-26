@@ -50,6 +50,7 @@ class SpinalMain {
     WORKING_HOURS : Object;
     connect: spinal.FileSystem;
     constructor() { 
+        // const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
         const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}/`;
         this.connect = spinalCore.connect(url);
         // this.stopTime = constants.WORKING_HOURS.end;
