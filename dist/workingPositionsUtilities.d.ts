@@ -20,7 +20,7 @@ export declare class UtilsWorkingPositions {
      * @param  {string} categoryName
      * @returns {Promise<Array<SpinalNodeRef>>}
      */
-    getWorkPositions(contextName: string, categoryName: string): Promise<Array<SpinalNodeRef>>;
+    getWorkPositions(contextName: string, categoryName: string, groupName: string): Promise<Array<SpinalNodeRef>>;
     /**
      * Returns all control_endpoints of the node
      * @param  {string} workpositionId - id of the nodes

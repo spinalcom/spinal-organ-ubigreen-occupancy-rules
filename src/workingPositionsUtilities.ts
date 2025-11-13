@@ -60,27 +60,30 @@ export const networkService = new NetworkService()
      * @param  {string} categoryName
      * @returns {Promise<Array<SpinalNodeRef>>} 
      */
-    public async getWorkPositions(contextName: string, categoryName: string): Promise<Array<SpinalNodeRef>> {
+    public async getWorkPositions(contextName: string, categoryName: string, groupName: string): Promise<Array<SpinalNodeRef>> {
         let context = undefined;
         let category = undefined;
+        let group = undefined;
+
         //get context
         let workPositionContext = await SpinalGraphService.getContextWithType("BIMObjectGroupContext");
         workPositionContext.forEach(elt => {
             if(elt.info.name.get()==contextName) context = elt;
         });
         //get category
-        let children = await SpinalGraphService.getChildren(context.info.id.get(),["hasCategory"]);
-        children.forEach(elt => {
+        let workPositionCategory = await SpinalGraphService.getChildren(context.info.id.get(),["hasCategory"]);
+        workPositionCategory.forEach(elt => {
             if(elt.name.get()==categoryName) category = elt;
         });
-        //get bimObjects
-        let workPositions = await SpinalGraphService.findInContext(category.id.get(), context.info.id.get(), (elt:SpinalNode<any>) => {
-            if(elt.info.type.get() == "BIMObject" && (elt.info.name.get()).includes('Furniture_Office-Chairs')){
-                (<any>SpinalGraphService)._addNode(elt);
-                return true;
-            }
-            return false;
+        //get group
+        let workPositionGroup = await SpinalGraphService.getChildren(category.id.get(),["hasGroup"]);
+        workPositionGroup.forEach(elt => {
+            if(elt.name.get()==groupName) group = elt;
         });
+
+        //get bimObjects
+        let workPositions = await SpinalGraphService.getChildren(group.id.get(),["groupHasBIMObject"]);
+      
         // console.log("workPositions : ", workPositions);
         return workPositions;
     }
@@ -107,7 +110,7 @@ export const networkService = new NetworkService()
                 }  
             }
         }
-        // console.log("workPositions command controlPoints : ",commandControlPoint);
+        
         return undefined;
     }
 
@@ -125,7 +128,7 @@ export const networkService = new NetworkService()
                     let bmsEndPoints = await SpinalGraphService.getChildren(device.id.get(),["hasBmsEndpoint"]);
                     if(bmsEndPoints.length!=0){
                         for(let bms of bmsEndPoints){
-                            if(((bms.name.get()).toLowerCase()).includes("occupation")) return bms;
+                            if(((bms.name.get()).toLowerCase()).includes("occupancy_status")) return bms;
                         }
                     } 
                 }

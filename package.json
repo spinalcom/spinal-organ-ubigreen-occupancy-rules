@@ -18,6 +18,7 @@
   "author": "Salah-Eddine CHERIFI",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.13.2",
     "dotenv": "^16.0.1",
     "moment": "^2.29.3",
     "node-cron": "^3.0.1",

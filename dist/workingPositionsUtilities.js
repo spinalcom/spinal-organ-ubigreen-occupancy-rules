@@ -46,9 +46,10 @@ class UtilsWorkingPositions {
      * @param  {string} categoryName
      * @returns {Promise<Array<SpinalNodeRef>>}
      */
-    async getWorkPositions(contextName, categoryName) {
+    async getWorkPositions(contextName, categoryName, groupName) {
         let context = undefined;
         let category = undefined;
+        let group = undefined;
         //get context
         let workPositionContext = await spinal_env_viewer_graph_service_1.SpinalGraphService.getContextWithType("BIMObjectGroupContext");
         workPositionContext.forEach(elt => {
@@ -56,19 +57,19 @@ class UtilsWorkingPositions {
                 context = elt;
         });
         //get category
-        let children = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(context.info.id.get(), ["hasCategory"]);
-        children.forEach(elt => {
+        let workPositionCategory = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(context.info.id.get(), ["hasCategory"]);
+        workPositionCategory.forEach(elt => {
             if (elt.name.get() == categoryName)
                 category = elt;
         });
-        //get bimObjects
-        let workPositions = await spinal_env_viewer_graph_service_1.SpinalGraphService.findInContext(category.id.get(), context.info.id.get(), (elt) => {
-            if (elt.info.type.get() == "BIMObject" && (elt.info.name.get()).includes('Furniture_Office-Chairs')) {
-                spinal_env_viewer_graph_service_1.SpinalGraphService._addNode(elt);
-                return true;
-            }
-            return false;
+        //get group
+        let workPositionGroup = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(category.id.get(), ["hasGroup"]);
+        workPositionGroup.forEach(elt => {
+            if (elt.name.get() == groupName)
+                group = elt;
         });
+        //get bimObjects
+        let workPositions = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(group.id.get(), ["groupHasBIMObject"]);
         // console.log("workPositions : ", workPositions);
         return workPositions;
     }
@@ -92,7 +93,6 @@ class UtilsWorkingPositions {
                 }
             }
         }
-        // console.log("workPositions command controlPoints : ",commandControlPoint);
         return undefined;
     }
     /**
@@ -107,7 +107,7 @@ class UtilsWorkingPositions {
                 let bmsEndPoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(device.id.get(), ["hasBmsEndpoint"]);
                 if (bmsEndPoints.length != 0) {
                     for (let bms of bmsEndPoints) {
-                        if (((bms.name.get()).toLowerCase()).includes("occupation"))
+                        if (((bms.name.get()).toLowerCase()).includes("occupancy_status"))
                             return bms;
                     }
                 }
