@@ -6,6 +6,6 @@ export declare const WORKING_POSITION: Readonly<{
 export declare const INTERVAL_TIME = 900000;
 export declare const WORKING_HOURS: Readonly<{
     start: 7;
-    mid: 12;
+    mid: 13;
     end: 19;
 }>;

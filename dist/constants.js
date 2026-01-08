@@ -37,7 +37,7 @@ exports.WORKING_POSITION = Object.freeze({
 exports.INTERVAL_TIME = 900000; //ms
 exports.WORKING_HOURS = Object.freeze({
     start: 7,
-    mid: 12,
+    mid: 13,
     end: 19
 });
 //# sourceMappingURL=constants.js.map

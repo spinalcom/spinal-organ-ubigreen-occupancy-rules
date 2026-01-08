@@ -119,10 +119,11 @@ class SpinalMain {
             await utils_workingPositions.bindControlpointToRelease(cp,ep,posNode);
 
         });
-        await Promise.all(promises);
-
-
-        console.log("** DONE ANALYSING WORKING POSITIONS **");
+        await Promise.all(promises).then(()=>{
+            console.log("** DONE ANALYSING WORKING POSITIONS **");
+        }).catch((err)=>{
+            console.error("Error release unoccupied positions ", err);
+        });
     }
 
 
@@ -153,15 +154,18 @@ class SpinalMain {
             let promises = listWP.map(async (posId) =>{
                 let cp = await utils_workingPositions.getControlPoint(posId);
                 let ep = await utils_workingPositions.getOccupancyBmsEndpoint(posId);
-    
-                let nodeEP = SpinalGraphService.getRealNode(ep.id.get());
-                let endpointValue = (await nodeEP.getElement(true)).currentValue.get()
-                if(endpointValue==0) await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other);
+                if(ep !== undefined){
+                    let nodeEP = SpinalGraphService.getRealNode(ep.id.get());
+                    let endpointValue = (await nodeEP.getElement(true)).currentValue.get()
+                    if(endpointValue==0) await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other);
+                }
     
             });
-            await Promise.all(promises);
-    
-            console.log("** DONE RESETING UNOCCUPIED WORKING POSITIONS **");
+            await Promise.all(promises).then(()=>{
+                console.log("** DONE RESETING UNOCCUPIED WORKING POSITIONS **");
+            }).catch((err)=>{
+                console.error("Error release unoccupied positions ", err);
+            });
         }
 
 
@@ -192,9 +196,11 @@ class SpinalMain {
             await utils_workingPositions.updateControlEndpoint(cp.id.get(),0,InputDataEndpointDataType.Real, InputDataEndpointType.Other)
 
         });
-        await Promise.all(promises);
-
-        console.log("** DONE RESETING WORKING POSITIONS **");
+        await Promise.all(promises).then(()=>{
+            console.log("** DONE RESETING WORKING POSITIONS **");
+        }).catch((err)=>{
+            console.error("Error release unoccupied positions ", err);
+        });
     }
 
 

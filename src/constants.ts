@@ -40,6 +40,6 @@ export const WORKING_POSITION = Object.freeze({
 export const INTERVAL_TIME = 900000; //ms
 export const WORKING_HOURS = Object.freeze({
     start: 7,
-    mid: 12,
+    mid: 13,
     end: 19
 });
