@@ -14,6 +14,6 @@ export declare const CAPACITY_ATTRIBUTE = "capacity";
 export declare const INTERVAL_TIME = 900000;
 export declare const WORKING_HOURS: Readonly<{
     start: 7;
-    mid: 14;
+    mid: 13;
     end: 19;
 }>;

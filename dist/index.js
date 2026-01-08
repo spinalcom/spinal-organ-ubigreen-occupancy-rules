@@ -43,6 +43,7 @@ spinal_core_connectorjs_type_1.FileSystem.onConnectionError = (error_code) => {
 };
 class SpinalMain {
     constructor() {
+        // const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}:${config.hubPort}/`;
         const url = `${config.hubProtocol}://${config.userId}:${config.userPassword}@${config.hubHost}/`;
         this.connect = spinal_core_connectorjs_type_1.spinalCore.connect(url);
         // this.stopTime = constants.WORKING_HOURS.end;
@@ -127,8 +128,11 @@ class SpinalMain {
             await utils_workingPositions.bindEndpointToControlpoint(cp, ep, posNode);
             await utils_workingPositions.bindControlpointToRelease(cp, ep, posNode);
         });
-        await Promise.all(promises);
-        console.log("** DONE ANALYSING WORKING POSITIONS **");
+        await Promise.all(promises).then(() => {
+            console.log("** DONE ANALYSING WORKING POSITIONS **");
+        }).catch((err) => {
+            console.error("ERROR ANALYSING WORKING POSITIONS --> ", err);
+        });
     }
     /**
  * Analyse the occupancy of all working positions
@@ -154,13 +158,18 @@ class SpinalMain {
         let promises = listWP.map(async (posId) => {
             let cp = await utils_workingPositions.getControlPoint(posId);
             let ep = await utils_workingPositions.getOccupancyBmsEndpoint(posId);
-            let nodeEP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(ep.id.get());
-            let endpointValue = (await nodeEP.getElement(true)).currentValue.get();
-            if (endpointValue == 0)
-                await utils_workingPositions.updateControlEndpoint(cp.id.get(), 0, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
+            if (ep !== undefined) {
+                let nodeEP = spinal_env_viewer_graph_service_1.SpinalGraphService.getRealNode(ep.id.get());
+                let endpointValue = (await nodeEP.getElement(true)).currentValue.get();
+                if (endpointValue == 0)
+                    await utils_workingPositions.updateControlEndpoint(cp.id.get(), 0, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
+            }
         });
-        await Promise.all(promises);
-        console.log("** DONE RESETING UNOCCUPIED WORKING POSITIONS **");
+        await Promise.all(promises).then(() => {
+            console.log("** DONE RESETING UNOCCUPIED WORKING POSITIONS **");
+        }).catch((err) => {
+            console.error("ERROR RESETING UNOCCUPIED WORKING POSITIONS --> ", err);
+        });
     }
     /**
      * Reset all working positions at 19h
@@ -187,8 +196,11 @@ class SpinalMain {
             let cp = await utils_workingPositions.getControlPoint(posId);
             await utils_workingPositions.updateControlEndpoint(cp.id.get(), 0, spinal_model_bmsnetwork_1.InputDataEndpointDataType.Real, spinal_model_bmsnetwork_1.InputDataEndpointType.Other);
         });
-        await Promise.all(promises);
-        console.log("** DONE RESETING WORKING POSITIONS **");
+        await Promise.all(promises).then(() => {
+            console.log("** DONE RESETING WORKING POSITIONS **");
+        }).catch((err) => {
+            console.error("ERROR RESETING WORKING POSITIONS --> ", err);
+        });
     }
 }
 async function Main() {
