@@ -122,7 +122,7 @@ class SpinalMain {
         await Promise.all(promises).then(()=>{
             console.log("** DONE ANALYSING WORKING POSITIONS **");
         }).catch((err)=>{
-            console.error("Error release unoccupied positions ", err);
+            console.error("ERROR ANALYSING WORKING POSITIONS --> ", err);
         });
     }
 
@@ -164,7 +164,7 @@ class SpinalMain {
             await Promise.all(promises).then(()=>{
                 console.log("** DONE RESETING UNOCCUPIED WORKING POSITIONS **");
             }).catch((err)=>{
-                console.error("Error release unoccupied positions ", err);
+                console.error("ERROR RESETING UNOCCUPIED WORKING POSITIONS --> ", err);
             });
         }
 
@@ -199,7 +199,7 @@ class SpinalMain {
         await Promise.all(promises).then(()=>{
             console.log("** DONE RESETING WORKING POSITIONS **");
         }).catch((err)=>{
-            console.error("Error release unoccupied positions ", err);
+            console.error("ERROR RESETING WORKING POSITIONS --> ", err);
         });
     }
 
