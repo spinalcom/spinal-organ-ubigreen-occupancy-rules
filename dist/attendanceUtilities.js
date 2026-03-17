@@ -104,17 +104,17 @@ class UtilsAttendance {
                 let allBmsEndpoints = await spinal_env_viewer_graph_service_1.SpinalGraphService.getChildren(controlPoint.id.get(), [CONTROL_POINTS_TO_BMS_ENDPOINT_RELATION]);
                 if (allBmsEndpoints.length != 0) {
                     for (let bmsEndPoint of allBmsEndpoints) {
-                        if (bmsEndPoint.name.get().toLowerCase().includes("_rie"))
+                        if (bmsEndPoint.name.get().toLowerCase() == "affluence_rie")
                             controlPointsObj.AFFLU_RIE = (bmsEndPoint);
-                        else if (bmsEndPoint.name.get().toLowerCase().includes("_cafet"))
+                        else if (bmsEndPoint.name.get().toLowerCase() == "affluence_cafeteria")
                             controlPointsObj.AFFLU_CAFET = (bmsEndPoint);
-                        else if (bmsEndPoint.name.get().toLowerCase().includes("bâtiment"))
+                        else if (bmsEndPoint.name.get().toLowerCase() == "taux d'occupation bâtiment")
                             controlPointsObj.OCCUP_BUILDING = (bmsEndPoint);
-                        else if (bmsEndPoint.name.get().toLowerCase().includes(" cafétéria"))
+                        else if (bmsEndPoint.name.get().toLowerCase() == "taux d'occupation cafétériat")
                             controlPointsObj.OCCUP_CAFET = (bmsEndPoint);
-                        else if (bmsEndPoint.name.get().toLowerCase().includes(" rie"))
+                        else if (bmsEndPoint.name.get().toLowerCase() == "taux d'occupation rie")
                             controlPointsObj.OCCUP_RIE = (bmsEndPoint);
-                        else if (bmsEndPoint.name.get().toLowerCase().includes("auditorium"))
+                        else if (bmsEndPoint.name.get().toLowerCase() == "taux d'occupation auditorium")
                             controlPointsObj.OCCUP_AUDITORIUM = (bmsEndPoint);
                     }
                     return controlPointsObj;
